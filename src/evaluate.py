@@ -18,29 +18,6 @@ def _mean(values):
     return float(sum(values) / len(values)) if len(values) > 0 else None
 
 
-def _df_to_records(df):
-    records = df.to_dict(orient='records')
-    cleaned_records = []
-    
-    for row in records:
-        clean_row = {}
-        for k, v in row.items():
-            # 1. Si es una lista o un array de numpy, lo guardamos directamente
-            if isinstance(v, (list, np.ndarray)):
-                # Convertimos a lista normal para evitar errores de serialización JSON
-                clean_row[k] = v.tolist() if isinstance(v, np.ndarray) else v
-            # 2. Si es un valor nulo (NaN), lo convertimos a None (null en JSON)
-            elif pd.isna(v):
-                clean_row[k] = None
-            # 3. Cualquier otro valor escalar (números, strings, booleanos)
-            else:
-                clean_row[k] = v
-                
-        cleaned_records.append(clean_row)
-        
-    return cleaned_records
-
-
 def evaluate_test(
     model,
     test_loader,
@@ -53,17 +30,17 @@ def evaluate_test(
     model.eval()
 
     if output_dir is None:
-        raise ValueError("output_dir es obligatorio para guardar predicciones y métricas lesion-wise.")
+        raise ValueError(
+            "output_dir es obligatorio para guardar predicciones y métricas lesion-wise."
+        )
 
     output_dir = Path(output_dir)
-    pred_dir = output_dir / "predictions"
-    pred_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     total_time = 0.0
     n_cases = 0
     use_amp = device.type == "cuda"
 
-    per_case_results = []
     by_label = {
         "WT": {"dice": [], "hd95": []},
         "TC": {"dice": [], "hd95": []},
@@ -81,7 +58,7 @@ def evaluate_test(
 
     with torch.no_grad():
         for batch_data in progress_bar:
-            inputs = batch_data["image"].to(device, non_blocking=True)
+            images = batch_data["image"].to(device, non_blocking=True)
             labels = batch_data["label"]
             case_ids = batch_data["case_id"]
 
@@ -89,7 +66,7 @@ def evaluate_test(
 
             with torch.amp.autocast("cuda", enabled=use_amp):
                 outputs = sliding_window_inference(
-                    inputs=inputs,
+                    inputs=images,
                     roi_size=roi_size,
                     sw_batch_size=sw_batch_size,
                     predictor=model,
@@ -100,7 +77,7 @@ def evaluate_test(
 
             elapsed = time.perf_counter() - start
             total_time += elapsed
-            n_cases += inputs.shape[0]
+            n_cases += images.shape[0]
 
             pred_labels = torch.argmax(outputs, dim=1).detach().cpu().numpy()
             gt_labels = labels[:, 0].detach().cpu().numpy()
@@ -113,33 +90,24 @@ def evaluate_test(
 
                 affine = np.diag([1.0, 1.0, 1.0, 1.0])
 
-                pred_path = pred_dir / f"{case_id}.nii.gz"
-                gt_path = output_dir / "ground_truth" / f"{case_id}.nii.gz"
-                gt_path.parent.mkdir(parents=True, exist_ok=True)
-
-                nib.save(nib.Nifti1Image(pred_arr, affine=affine), str(pred_path))
-                nib.save(nib.Nifti1Image(gt_arr, affine=affine), str(gt_path))
-
-
                 with tempfile.TemporaryDirectory(dir=output_dir) as tmp_dir:
+                    tmp_dir = Path(tmp_dir)
+                    pred_path = tmp_dir / f"{case_id}_pred.nii.gz"
+                    gt_path = tmp_dir / f"{case_id}_gt.nii.gz"
+
+                    nib.save(nib.Nifti1Image(pred_arr, affine=affine), str(pred_path))
+                    nib.save(nib.Nifti1Image(gt_arr, affine=affine), str(gt_path))
+
                     old_cwd = os.getcwd()
                     try:
                         os.chdir(tmp_dir)
-                        results_df, lesion_df = get_LesionWiseResults(
+                        results_df, _ = get_LesionWiseResults(
                             pred_file=str(pred_path.resolve()),
                             gt_file=str(gt_path.resolve()),
                             challenge_name="BraTS-GLI",
                         )
-
                     finally:
                         os.chdir(old_cwd)
-
-                case_summary = {
-                    "case_id": case_id,
-                    "summary": _df_to_records(results_df),
-                    "lesions": _df_to_records(lesion_df),
-                }
-                per_case_results.append(case_summary)
 
                 for _, row in results_df.iterrows():
                     label = row["Labels"]
@@ -185,7 +153,6 @@ def evaluate_test(
         "mean_lesionwise_dice": _mean(global_dice),
         "mean_lesionwise_hd95": _mean(global_hd95),
         "by_label": by_label_mean,
-        "per_case": per_case_results,
         "avg_inference_time_sec": float(avg_time),
         "total_inference_time_sec": float(total_time),
     }

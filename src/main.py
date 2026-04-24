@@ -1,27 +1,27 @@
 from pathlib import Path
 import argparse
+import gc
 import json
 import math
 import statistics
-import gc
 
 import torch
 import torch.multiprocessing as mp
-from monai.data import PersistentDataset, DataLoader
+from monai.data import DataLoader, PersistentDataset
 
 from src.config import *
-from src.utils.seed import set_seed
-from src.utils.checkpoints import load_checkpoint
-from src.data.dataset import collect_cases_from_dirs
-from src.data.splits import save_split, split_train_val, make_kfold_splits
+from src.data.splits import make_kfold_splits, save_split, split_train_val
 from src.data.transforms import (
+    get_test_transforms,
     get_train_transforms,
     get_val_transforms,
-    get_test_transforms,
 )
+from src.evaluate import evaluate_test
 from src.models.get_model import get_model
 from src.train import train_model
-from src.evaluate import evaluate_test
+from src.utils.checkpoints import load_checkpoint
+from src.utils.seed import set_seed
+from src.data.dataset import get_cases_from_dirs
 
 
 def safe_mean(values):
@@ -147,7 +147,6 @@ def build_base_results(
         "test_lesionwise_mean_dice": None,
         "test_lesionwise_mean_hd95": None,
         "test_lesionwise_by_label": None,
-        "test_cases": None,
         "train_time_sec": train_time_sec,
         "inference_time_per_case_sec": None,
         "train_memory_mb": train_memory_mb,
@@ -298,6 +297,9 @@ def test_fold(fold_idx, train_cases, val_cases, test_cases):
     )
 
     existing_results = load_json(fold_dir / "results.json")
+    if existing_results is not None:
+        existing_results.pop("test_cases", None)
+
     if existing_results is None:
         existing_results = build_base_results(
             fold_idx=fold_idx,
@@ -334,13 +336,14 @@ def test_fold(fold_idx, train_cases, val_cases, test_cases):
         existing_results["test_lesionwise_mean_dice"] = test_metrics["mean_lesionwise_dice"]
         existing_results["test_lesionwise_mean_hd95"] = test_metrics["mean_lesionwise_hd95"]
         existing_results["test_lesionwise_by_label"] = test_metrics["by_label"]
-        existing_results["test_cases"] = test_metrics["per_case"]
         existing_results["inference_time_per_case_sec"] = test_metrics["avg_inference_time_sec"]
         existing_results["test_memory_mb"] = test_mem
         existing_results["test_error"] = None
+        existing_results.pop("test_cases", None)
 
     except Exception as e:
         existing_results["test_error"] = repr(e)
+        existing_results.pop("test_cases", None)
         save_json(fold_dir / "results.json", existing_results)
         raise
 
@@ -438,7 +441,7 @@ def main():
     experiment_root = EXPERIMENTS_DIR / EXPERIMENT_NAME
     experiment_root.mkdir(parents=True, exist_ok=True)
 
-    all_cases = collect_cases_from_dirs(TRAIN_DIRS, include_label=True)
+    all_cases = get_cases_from_dirs(TRAIN_DIRS, include_label=True)
     folds = make_kfold_splits(all_cases, n_splits=N_FOLDS, seed=SEED)
 
     fold_results = []
@@ -482,3 +485,4 @@ def main():
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=True)
     main()
+
