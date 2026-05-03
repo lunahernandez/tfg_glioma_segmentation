@@ -23,7 +23,8 @@ SEED = 42
 # MODALITIES = ["t1c", "t1n", "t2f", "t2w"]
 LABEL_SUFFIX = "seg"
 
-ROI_SIZE = (96, 96, 96)
+# ROI_SIZE = (96, 96, 96)
+ROI_SIZE = (128, 128, 128)
 SPACING = (1.0, 1.0, 1.0)
 
 IN_CHANNELS = 4
@@ -35,8 +36,9 @@ VAL_BATCH_SIZE = 1
 NUM_WORKERS = 4
 
 MAX_EPOCHS = 100
-VAL_EVERY = 1
+VAL_EVERY = 5
 
+# LEARNING_RATE = 1e-5 # Para Segmamba
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-5
 
@@ -60,8 +62,8 @@ PERSISTENT_CACHE_DIR = CACHE_ROOT / CACHE_NAME
 # Experimentos
 # MODEL_NAME = "unet3d"
 # MODEL_NAME = "resunet3d"
-# MODEL_NAME = "dense_unet_plus"
-MODEL_NAME = "swin_unetr"
+MODEL_NAME = "dense_unet_plus"
+# MODEL_NAME = "swin_unetr"
 # MODEL_NAME = "segmamba"
 
 EXPERIMENT_NAME = (
