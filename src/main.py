@@ -474,12 +474,16 @@ def main():
 
         cleanup_memory()
 
-    cv_results = aggregate_cv_results(fold_results)
 
-    with open(experiment_root / "crossval_results.json", "w", encoding="utf-8") as f:
-        json.dump(cv_results, f, indent=2)
+    if args.fold is None:
+        cv_results = aggregate_cv_results(fold_results)
 
-    print(json.dumps(cv_results, indent=2))
+        with open(experiment_root / "crossval_results.json", "w", encoding="utf-8") as f:
+            json.dump(cv_results, f, indent=2)
+
+        print(json.dumps(cv_results, indent=2))
+    else:
+        print(f"\nFold {args.fold} completed. Individual results are saved in its folder.")
 
 
 if __name__ == "__main__":
