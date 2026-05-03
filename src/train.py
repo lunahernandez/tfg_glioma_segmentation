@@ -56,8 +56,8 @@ def train_model(
                 loss = loss_function(outputs, labels)
 
             scaler.scale(loss).backward()
-            # scaler.unscale_(optimizer) # Añadido para SegMamba
-            # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0) # Añadido para Segmamba
+            # scaler.unscale_(optimizer) # Added for SegMamba
+            # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0) # Added for Segmamba
             scaler.step(optimizer)
             scaler.update()
 
@@ -85,7 +85,6 @@ def train_model(
                 device=device,
                 roi_size=roi_size,
                 sw_batch_size=sw_batch_size,
-                num_classes=num_classes,
             )
 
             val_mean_dice = metrics["mean_dice"]
@@ -112,7 +111,7 @@ def train_model(
                     save_path=experiment_dir / "best_model.pt",
                 )
 
-                print("nuevo mejor modelo guardado")
+                print("new best model saved")
 
         history.append(epoch_info)
 

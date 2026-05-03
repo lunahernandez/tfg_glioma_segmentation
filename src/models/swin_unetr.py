@@ -9,16 +9,16 @@ def build_swin_unetr(
     feature_size: int = 48,
     use_checkpoint: bool = True,
 ) -> SwinUNETR:
-    """Construye un modelo SwinUNETR para segmentación volumétrica.
+    """Builds a SwinUNETR model for volumetric segmentation.
 
     Args:
-        in_channels: Número de canales de entrada.
-        out_channels: Número de canales de salida.
-        feature_size: Dimensión de las características del embedding.
-        use_checkpoint: Indica si se usa gradient checkpointing para ahorrar memoria.
+        in_channels: Number of input channels.
+        out_channels: Number of output channels.
+        feature_size: Dimension of the embedding features.
+        use_checkpoint: Indicates whether to use gradient checkpointing to save memory.
 
     Returns:
-        Una instancia del modelo SwinUNETR de MONAI para segmentación 3D.
+        An instance of the MONAI SwinUNETR model for 3D segmentation.
     """
     return SwinUNETR(
         in_channels=in_channels,

@@ -4,16 +4,16 @@ from typing import Dict, List, Optional, Tuple
 
 
 def get_case_data(case_dir: Path, include_label: bool = True) -> Optional[Dict]:
-    """Obtiene información de un caso a partir de su directorio.
+    """Retrieves information for a case from its directory.
     
     Args:
-        case_dir: Ruta a la carpeta del caso.
-        include_label: Indica si se debe incluir la máscara de segmentación.
+        case_dir: Path to the case folder.
+        include_label: Indicates whether the segmentation mask should be included.
 
     Returns:
-        Un diccionario con el identificador del caso, las rutas de las imágenes
-        y, opcionalmente, la ruta de la etiqueta. Devuelve ``None`` si falta
-        algún archivo.
+        A dictionary with the case identifier, the image paths,
+        and, optionally, the label path. Returns ``None`` if any
+        file is missing.
     """
     case_id = case_dir.name
 
@@ -40,14 +40,14 @@ def get_case_data(case_dir: Path, include_label: bool = True) -> Optional[Dict]:
 
 
 def get_cases_from_dirs(directories: List[Path], include_label: bool = True) -> List[Dict]:
-    """Obtiene la información de los casos a partir de una lista de directorios.
+    """Retrieves cases information from a list of directories.
     
     Args:
-        directories: Lista de rutas a directorios que contienen carpetas de casos.
-        include_label: Indica si se debe incluir la máscara de segmentación.
+        directories: List of paths to directories containing case folders.
+        include_label: Indicates whether the segmentation mask should be included.
 
     Returns:
-        Una lista de diccionarios con la información de cada caso.
+        A list of dictionaries with the information of each case.
     """
     cases = []
     for directory in directories:
@@ -63,43 +63,3 @@ def get_cases_from_dirs(directories: List[Path], include_label: bool = True) -> 
                 cases.append(case_data)
 
     return cases
-
-
-def split_train_val_test(
-    cases: List[Dict],
-    train_ratio: float = 0.8,
-    val_ratio: float = 0.1,
-    test_ratio: float = 0.1,
-    seed: int = 42,
-) -> Tuple[List[Dict], List[Dict], List[Dict]]:
-    """Divide los casos en entrenamiento, validación y prueba.
-
-    Args:
-        cases: Lista de casos a dividir.
-        train_ratio: Proporción de casos de entrenamiento.
-        val_ratio: Proporción de casos de validación.
-        test_ratio: Proporción de casos de prueba.
-        seed: Semilla usada para barajar los casos.
-
-    Returns:
-        Una tupla con las listas de casos de entrenamiento, validación y prueba.
-
-    Raises:
-        ValueError: Si la suma de las proporciones no es 1.0.
-    """
-    if abs(train_ratio + val_ratio + test_ratio - 1.0) > 1e-8:
-        raise ValueError("train_ratio + val_ratio + test_ratio debe sumar 1.0")
-
-    random_generator = random.Random(seed)
-    shuffled_cases = cases.copy()
-    random_generator.shuffle(shuffled_cases)
-
-    n = len(shuffled_cases)
-    n_train = int(n * train_ratio)
-    n_val = int(n * val_ratio)
-
-    train_cases = shuffled_cases[:n_train]
-    val_cases = shuffled_cases[n_train:n_train + n_val]
-    test_cases = shuffled_cases[n_train + n_val:]
-
-    return train_cases, val_cases, test_cases

@@ -29,7 +29,7 @@ def _to_label_map(x: torch.Tensor) -> torch.Tensor:
         return x[:, 0].long()
     if x.ndim == 4:
         return x.long()
-    raise ValueError(f"Forma no soportada para etiquetas: {tuple(x.shape)}")
+    raise ValueError(f"Unsupported shape for labels: {tuple(x.shape)}")
 
 
 def _region_mask(label_map: torch.Tensor, region_values) -> torch.Tensor:
@@ -138,7 +138,7 @@ def finalize_region_stats(stats):
         "mean_dice": mean_dice,
         "mean_hd95": mean_hd95,
         "metric_note": (
-            "Métricas por subregión BraTS (ET, NETC, SNFH, RC, TC, WT). "
-            "Esto no replica el evaluador lesion-wise oficial del challenge."
+            "Metrics per BraTS subregion (ET, NETC, SNFH, RC, TC, WT). "
+            "This does not replicate the official lesion-wise challenge evaluator."
         ),
     }

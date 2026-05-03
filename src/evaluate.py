@@ -31,7 +31,7 @@ def evaluate_test(
 
     if output_dir is None:
         raise ValueError(
-            "output_dir es obligatorio para guardar predicciones y métricas lesion-wise."
+            "output_dir is mandatory to save predictions and lesion-wise metrics."
         )
 
     output_dir = Path(output_dir)

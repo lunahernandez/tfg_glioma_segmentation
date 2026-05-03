@@ -27,7 +27,7 @@ class DenseBlock3D(nn.Module):
 
 class AttentionBlock3D(nn.Module):
     """
-    Mecanismo de atencion propuesto en DenseUNet+ para suprimir fondo sano.
+    Attention mechanism proposed in DenseUNet+ to suppress healthy background.
     """
     def __init__(self, F_g, F_l, F_int):
         super().__init__()
@@ -78,12 +78,12 @@ class DenseUNetPlus3D(nn.Module):
         self.bottleneck = DenseBlock3D(channels_enc3, growth_rate, block_layers)
         channels_bot = channels_enc3 + block_layers * growth_rate
 
-        # Decoder con Attention Blocks integrados (La magia del '+')
+        # Decoder with integrated Attention Blocks (The magic of '+')
         self.up3 = nn.ConvTranspose3d(channels_bot, channels_enc3, kernel_size=2, stride=2)
         self.att3 = AttentionBlock3D(F_g=channels_enc3, F_l=channels_enc3, F_int=channels_enc3 // 2)
         self.dec3 = DenseBlock3D(channels_enc3 * 2, growth_rate, block_layers)
         channels_dec3 = (channels_enc3 * 2) + block_layers * growth_rate
-        # Capa de reduccion para evitar colapso de VRAM en la RTX 5090
+        # Reduction layer to avoid VRAM collapse on the RTX 5090
         self.reduce3 = nn.Conv3d(channels_dec3, channels_enc2, kernel_size=1)
 
         self.up2 = nn.ConvTranspose3d(channels_enc2, channels_enc2, kernel_size=2, stride=2)
@@ -97,7 +97,7 @@ class DenseUNetPlus3D(nn.Module):
         self.dec1 = DenseBlock3D(channels_enc1 * 2, growth_rate, block_layers)
         channels_dec1 = (channels_enc1 * 2) + block_layers * growth_rate
 
-        # Salida
+        # Output
         self.final_conv = nn.Conv3d(channels_dec1, out_channels, kernel_size=1)
 
     def forward(self, x):

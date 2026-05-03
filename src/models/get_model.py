@@ -14,19 +14,19 @@ def get_model(
     use_checkpoint: bool = True,
 ) -> Module:
     """
-    Devuelve una instancia del modelo solicitado.
+    Returns an instance of the requested model.
 
     Args:
-        model_name: Nombre del modelo a construir.
-        in_channels: Número de canales de entrada.
-        out_channels: Número de canales de salida.
-        use_checkpoint: Indica si se usa gradient checkpointing en los modelos que lo soportan.
+        model_name: Name of the model to build.
+        in_channels: Number of input channels.
+        out_channels: Number of output channels.
+        use_checkpoint: Indicates whether to use gradient checkpointing in models that support it.
 
     Returns:
-        Instancia del modelo correspondiente al nombre indicado.
+        Instance of the model corresponding to the indicated name.
 
     Raises:
-        ValueError: Si el nombre del modelo no está soportado.
+        ValueError: If the model name is not supported.
     """
     model_name = model_name.lower()
 
@@ -60,4 +60,4 @@ def get_model(
             feat_size=[48, 96, 192, 384],
         )
 
-    raise ValueError(f"Modelo no soportado: {model_name}")
+    raise ValueError(f"Unsupported model: {model_name}")

@@ -368,7 +368,7 @@ def run_fold(fold_idx, train_cases, val_cases, test_cases, mode):
         cleanup_memory()
         return test_fold(fold_idx, train_cases, val_cases, test_cases)
 
-    raise ValueError(f"Modo no soportado: {mode}")
+    raise ValueError(f"Unsupported mode: {mode}")
 
 
 def aggregate_cv_results(fold_results):
@@ -423,13 +423,13 @@ def parse_args():
         "--mode",
         choices=["train", "test", "all"],
         default="all",
-        help="train: solo entrena, test: solo evalúa, all: entrena y evalúa.",
+        help="train: only trains, test: only evaluates, all: trains and evaluates.",
     )
     parser.add_argument(
         "--fold",
         type=int,
         default=None,
-        help="Si se indica, ejecuta solo ese fold.",
+        help="If specified, executes only that fold.",
     )
     return parser.parse_args()
 
@@ -460,7 +460,7 @@ def main():
 
         print("=" * 70)
         print(f"Fold {fold_idx}/{N_FOLDS}")
-        print(f"Modo: {args.mode}")
+        print(f"Mode: {args.mode}")
         print(f"Train: {len(train_cases)} | Val: {len(val_cases)} | Test: {len(test_cases)}")
 
         fold_result = run_fold(
@@ -485,4 +485,3 @@ def main():
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=True)
     main()
-

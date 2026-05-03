@@ -2,7 +2,7 @@ from pathlib import Path
 
 import torch
 
-# Rutas
+# Paths
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 EXPERIMENTS_DIR = PROJECT_ROOT / "experiments"
@@ -15,11 +15,11 @@ TRAIN_DIRS = [
 
 # VAL_DIR = DATA_DIR / "validation_data"
 
-# Hardware y reproducibilidad
+# Hardware and reproducibility
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 SEED = 42
 
-# Configuración del conjunto de datos
+# Dataset configuration
 # MODALITIES = ["t1c", "t1n", "t2f", "t2w"]
 LABEL_SUFFIX = "seg"
 
@@ -30,7 +30,7 @@ SPACING = (1.0, 1.0, 1.0)
 IN_CHANNELS = 4
 OUT_CHANNELS = 5
 
-# Hiperparámetros de entrenamiento
+# Training hyperparameters
 BATCH_SIZE = 1
 VAL_BATCH_SIZE = 1
 NUM_WORKERS = 4
@@ -38,19 +38,19 @@ NUM_WORKERS = 4
 MAX_EPOCHS = 100
 VAL_EVERY = 5
 
-# LEARNING_RATE = 1e-5 # Para Segmamba
+# LEARNING_RATE = 1e-5 # For Segmamba
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-5
 
-# Memoria y rendimiento
+# Memory and performance
 SW_BATCH_SIZE = 2
 USE_CHECKPOINT = True
 
-# Validación cruzada
+# Cross-validation
 N_FOLDS = 5
 INNER_VAL_RATIO = 0.1
 
-# Caché
+# Cache
 CACHE_VERSION = "v1"
 CACHE_NAME = (
     f"brats_{CACHE_VERSION}"
@@ -59,10 +59,10 @@ CACHE_NAME = (
 )
 PERSISTENT_CACHE_DIR = CACHE_ROOT / CACHE_NAME
 
-# Experimentos
-# MODEL_NAME = "unet3d"
+# Experiments
+MODEL_NAME = "unet3d"
 # MODEL_NAME = "resunet3d"
-MODEL_NAME = "dense_unet_plus"
+# MODEL_NAME = "dense_unet_plus"
 # MODEL_NAME = "swin_unetr"
 # MODEL_NAME = "segmamba"
 

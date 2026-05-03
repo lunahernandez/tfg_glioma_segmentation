@@ -1,6 +1,7 @@
 from monai.networks.nets import UNet
 from typing import Tuple
 
+
 def build_resunet3d(
     in_channels: int = 4, 
     out_channels: int = 5, 
@@ -8,17 +9,17 @@ def build_resunet3d(
     strides: Tuple[int, ...] = (2, 2, 2, 2),
     num_res_units: int = 2
 ) -> UNet:
-    """Construye una arquitectura 3D Residual U-Net (ResUNet) usando MONAI.
+    """Builds a 3D Residual U-Net (ResUNet) architecture using MONAI.
 
     Args:
-        in_channels: Número de canales de entrada (ej. modalidades MRI).
-        out_channels: Número de canales de salida (clases de segmentación).
-        channels: Secuencia de números de filtros para cada nivel.
-        strides: Secuencia de strides para las convoluciones de bajada.
-        num_res_units: Número de subunidades residuales por bloque. Un valor > 0 la convierte en ResUNet.
+        in_channels: Number of input channels (e.g., MRI modalities).
+        out_channels: Number of output channels (segmentation classes).
+        channels: Sequence of the number of filters for each level.
+        strides: Sequence of strides for the downsampling convolutions.
+        num_res_units: Number of residual subunits per block. A value > 0 makes it a ResUNet.
 
     Returns:
-        Una instancia del modelo UNet de MONAI configurada para 3D con conexiones residuales.
+        An instance of the MONAI UNet model configured for 3D with residual connections.
     """
     return UNet(
         spatial_dims=3,

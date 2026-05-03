@@ -9,7 +9,30 @@ from src.utils.brats_regions import (
 )
 
 
-def validate(model, data_loader, device, roi_size=(96, 96, 96), sw_batch_size=1, num_classes=5):
+def validate(
+    model: torch.nn.Module,
+    data_loader,
+    device: torch.device,
+    roi_size: tuple[int, int, int] = (96, 96, 96),
+    sw_batch_size: int = 1,
+) -> dict:
+    """Evaluates the model on the validation set.
+
+    The model generates predictions using ``sliding_window_inference``
+    and calculates metrics for each BraTS subregion based on the
+    predicted and ground truth labels.
+
+    Args:
+        model: Segmentation model to evaluate.
+        data_loader: Data loader for the validation set.
+        device: Device on which the evaluation is performed.
+        roi_size: Size of the region of interest.
+        sw_batch_size: Number of windows processed simultaneously in
+            ``sliding_window_inference``.
+
+    Returns:
+        A dictionary with the validation metrics.
+    """
     model.eval()
 
     use_amp = device.type == "cuda"
@@ -23,12 +46,12 @@ def validate(model, data_loader, device, roi_size=(96, 96, 96), sw_batch_size=1,
 
     with torch.no_grad():
         for batch_data in progress_bar:
-            inputs = batch_data["image"].to(device, non_blocking=True)
+            images = batch_data["image"].to(device, non_blocking=True)
             labels = batch_data["label"].to(device, non_blocking=True)
 
             with torch.amp.autocast("cuda", enabled=use_amp):
                 outputs = sliding_window_inference(
-                    inputs=inputs,
+                    inputs=images,
                     roi_size=roi_size,
                     sw_batch_size=sw_batch_size,
                     predictor=model,

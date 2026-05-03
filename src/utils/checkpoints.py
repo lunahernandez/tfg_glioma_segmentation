@@ -12,18 +12,18 @@ def save_checkpoint(
     best_metric: float,
     save_path: str | Path,
 ) -> None:
-    """Guarda un checkpoint del modelo y, opcionalmente, del optimizador.
+    """Saves a checkpoint of the model and, optionally, of the optimizer.
 
-    Nota:
-        Implementación adaptada de un tutorial oficial de MONAI:
+    Note:
+        Implementation adapted from an official MONAI tutorial:
         https://github.com/Project-MONAI/tutorials/blob/main/3d_segmentation/swin_unetr_brats21_segmentation_3d.ipynb
 
     Args:
-        model: Modelo a guardar.
-        optimizer: Optimizador del entrenamiento.
-        epoch: Número de época correspondiente al checkpoint.
-        best_metric: Mejor valor de la métrica registrado.
-        save_path: Ruta donde se guardará el checkpoint.
+        model: Model to save.
+        optimizer: Training optimizer.
+        epoch: Epoch number corresponding to the checkpoint.
+        best_metric: Best registered metric value.
+        save_path: Path where the checkpoint will be saved.
     """
     save_path = Path(save_path)
     save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -35,7 +35,7 @@ def save_checkpoint(
         "optimizer_state_dict": optimizer.state_dict() if optimizer is not None else None,
     }
     torch.save(checkpoint, save_path)
-    print(f"Checkpoint guardado en: {save_path}")
+    print(f"Checkpoint saved at: {save_path}")
 
 
 def load_checkpoint(
@@ -44,17 +44,17 @@ def load_checkpoint(
     checkpoint_path: str | Path,
     device: str | torch.device = "cpu",
 ) -> tuple[Module, Optimizer | None, int, float]:
-    """Carga un checkpoint en el modelo y, opcionalmente, en el optimizador.
+    """Loads a checkpoint into the model and, optionally, into the optimizer.
 
     Args:
-        model: Modelo en el que se cargará el estado guardado.
-        optimizer: Optimizador en el que se cargará el estado guardado.
-        checkpoint_path: Ruta del archivo de checkpoint.
-        device: Dispositivo en el que se cargará el checkpoint.
+        model: Model where the saved state will be loaded.
+        optimizer: Optimizer where the saved state will be loaded.
+        checkpoint_path: Path to the checkpoint file.
+        device: Device where the checkpoint will be loaded.
 
     Returns:
-        Una tupla con el modelo, el optimizador, la época del checkpoint y
-        el mejor valor de la métrica registrado.
+        A tuple containing the model, the optimizer, the checkpoint epoch, and
+        the best registered metric value.
     """
     checkpoint = torch.load(checkpoint_path, map_location=device)
     model.load_state_dict(checkpoint["model_state_dict"])

@@ -19,18 +19,18 @@ def get_train_transforms(
     roi_size: tuple[int, int, int] = (96, 96, 96),
     spacing: tuple[float, float, float] = (1.0, 1.0, 1.0),
 ) -> Compose:
-    """Construye las transformaciones del conjunto de entrenamiento.
+    """Builds the transformations for the training set.
 
-    Incluye carga de datos, preparación del formato, reorientación, 
-    remuestreo, normalización, recorte, relleno espacial y aumento 
-    de datos.
+    Includes data loading, format preparation, reorientation,
+    resampling, normalization, cropping, spatial padding, and
+    data augmentation.
 
     Args:
-        roi_size: Tamaño de la región de interés.
-        spacing: Espaciado aplicado al remuestreo.
+        roi_size: Size of the region of interest.
+        spacing: Spacing applied to resampling.
 
     Returns:
-        Una composición de transformaciones para el conjunto de entrenamiento.
+        A composition of transformations for the training set.
     """
     return Compose([
         LoadImaged(keys=["image", "label"]),
@@ -62,17 +62,17 @@ def get_val_transforms(
     roi_size: tuple[int, int, int] = (96, 96, 96),
     spacing: tuple[float, float, float] = (1.0, 1.0, 1.0),
 ) -> Compose:
-    """Construye las transformaciones del conjunto de validación.
+    """Builds the transformations for the validation set.
 
-    Incluye carga de datos, preparación del formato, reorientación, 
-    remuestreo, normalización, recorte y relleno espacial.
+    Includes data loading, format preparation, reorientation,
+    resampling, normalization, cropping, and spatial padding.
 
     Args:
-        roi_size: Tamaño de la región de interés.
-        spacing: Espaciado aplicado al remuestreo.
+        roi_size: Size of the region of interest.
+        spacing: Spacing applied to resampling.
 
     Returns:
-        Una composición de transformaciones para el conjunto de validación.
+        A composition of transformations for the validation set.
     """
     return Compose([
         LoadImaged(keys=["image", "label"]),
@@ -94,17 +94,17 @@ def get_test_transforms(
     roi_size: tuple[int, int, int] = (96, 96, 96),
     spacing: tuple[float, float, float] = (1.0, 1.0, 1.0),
 ) -> Compose:
-    """Construye las transformaciones del conjunto de prueba.
+    """Builds the transformations for the testing set.
 
-    Incluye carga de datos, preparación del formato, reorientación, 
-    remuestreo, normalización, recorte y relleno espacial.
+    Includes data loading, format preparation, reorientation,
+    resampling, normalization, cropping, and spatial padding.
 
     Args:
-        roi_size: Tamaño de la región de interés.
-        spacing: Espaciado aplicado al remuestreo.
+        roi_size: Size of the region of interest.
+        spacing: Spacing applied to resampling.
 
     Returns:
-        Una composición de transformaciones para el conjunto de prueba.
+        A composition of transformations for the testing set.
     """
     return Compose([
         LoadImaged(keys=["image", "label"]),

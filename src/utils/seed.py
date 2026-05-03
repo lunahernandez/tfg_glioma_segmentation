@@ -5,12 +5,12 @@ import torch
 
 def set_seed(seed: int = 42) -> None:
     """
-    Configura las semillas para garantizar la reproducibilidad en
-    los módulos random, numpy y torch. Además, ajusta las configuraciones
-    de cuDNN para asegurar resultados deterministas.
+    Sets the seeds to guarantee reproducibility in the
+    random, numpy, and torch modules. Additionally, adjusts
+    cuDNN settings to ensure deterministic results.
 
     Args:
-        seed: Valor de la semilla a usar.
+        seed: Seed value to use.
     """
     random.seed(seed)
     np.random.seed(seed)

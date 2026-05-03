@@ -9,16 +9,16 @@ def build_unet3d(
     channels: Tuple[int, ...] = (16, 32, 64, 128, 256),
     strides: Tuple[int, ...] = (2, 2, 2, 2),
 ) -> UNet:
-    """Construye un modelo U-Net 3D para segmentación volumétrica.
+    """Builds a 3D U-Net model for volumetric segmentation.
 
     Args:
-        in_channels: Número de canales de entrada.
-        out_channels: Número de canales de salida.
-        channels: Secuencia con el número de canales de características en cada nivel.
-        strides: Secuencia con los factores de reducción espacial entre niveles.
+        in_channels: Number of input channels.
+        out_channels: Number of output channels.
+        channels: Sequence with the number of feature channels at each level.
+        strides: Sequence with the spatial reduction factors between levels.
 
     Returns:
-        Una instancia del modelo U-Net de MONAI para segmentación 3D.
+        An instance of the MONAI U-Net model for 3D segmentation.
     """
     return UNet(
         spatial_dims=3,
