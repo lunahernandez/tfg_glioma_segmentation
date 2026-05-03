@@ -138,18 +138,18 @@ def get_TissueWiseSeg(prediction_matrix, gt_matrix, tissue_type):
 
     elif tissue_type == 'TC':
         prediction_matrix = ((prediction_matrix == 1) | (
-            prediction_matrix == 2)).astype(float)
-        gt_matrix = ((gt_matrix == 1) | (gt_matrix == 2)).astype(float)
+            prediction_matrix == 3)).astype(float)
+        gt_matrix = ((gt_matrix == 1) | (gt_matrix == 3)).astype(float)
 
-    elif tissue_type == 'ET':
+    elif tissue_type == 'NETC':
         prediction_matrix = (prediction_matrix == 1).astype(float)
         gt_matrix = (gt_matrix == 1).astype(float)
 
-    elif tissue_type == 'NETC':
+    elif tissue_type == 'SNFH':
         prediction_matrix = (prediction_matrix == 2).astype(float)
         gt_matrix = (gt_matrix == 2).astype(float)
 
-    elif tissue_type == 'SNFH':
+    elif tissue_type == 'ET':
         prediction_matrix = (prediction_matrix == 3).astype(float)
         gt_matrix = (gt_matrix == 3).astype(float)
 

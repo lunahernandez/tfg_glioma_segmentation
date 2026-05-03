@@ -4,13 +4,14 @@ import torch
 from monai.metrics import HausdorffDistanceMetric
 from monai.utils.enums import MetricReduction
 
+
 BRATS_REGION_LABELS = OrderedDict({
-    "ET": [1],
-    "NETC": [2],
-    "SNFH": [3],
+    "NETC": [1],
+    "SNFH": [2],
+    "ET": [3],
     "RC": [4],
-    "TC": [1, 2],        # ET + NETC
-    "WT": [1, 2, 3],     # ET + NETC + SNFH
+    "TC": [1, 3],        # NETC + ET
+    "WT": [1, 2, 3],     # NETC + SNFH + ET
 })
 
 

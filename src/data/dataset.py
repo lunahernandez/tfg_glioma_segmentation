@@ -1,6 +1,5 @@
-import random
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 
 def get_case_data(case_dir: Path, include_label: bool = True) -> Optional[Dict]:

@@ -161,6 +161,8 @@ def build_base_results(
             "max_epochs": MAX_EPOCHS,
             "learning_rate": LEARNING_RATE,
             "weight_decay": WEIGHT_DECAY,
+            "clip_grad": CLIP_GRAD,
+            "grad_clip_max_norm": GRAD_CLIP_MAX_NORM,
             "use_checkpoint": USE_CHECKPOINT,
             "num_workers": NUM_WORKERS,
             "persistent_workers": False,
@@ -228,7 +230,8 @@ def train_fold(fold_idx, train_cases, val_cases, test_cases):
         experiment_dir=fold_dir,
         roi_size=ROI_SIZE,
         sw_batch_size=SW_BATCH_SIZE,
-        num_classes=OUT_CHANNELS,
+        clip_grad=CLIP_GRAD,
+        grad_clip_max_norm=GRAD_CLIP_MAX_NORM or 1.0,
     )
 
     train_mem = (
@@ -321,7 +324,6 @@ def test_fold(fold_idx, train_cases, val_cases, test_cases):
             device=DEVICE,
             roi_size=ROI_SIZE,
             sw_batch_size=SW_BATCH_SIZE,
-            num_classes=OUT_CHANNELS,
             output_dir=fold_dir / "test_eval",
         )
 

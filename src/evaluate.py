@@ -24,7 +24,6 @@ def evaluate_test(
     device,
     roi_size=(96, 96, 96),
     sw_batch_size=1,
-    num_classes=5,
     output_dir=None,
 ):
     model.eval()

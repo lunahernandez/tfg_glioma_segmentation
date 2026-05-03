@@ -13,14 +13,12 @@ TRAIN_DIRS = [
     DATA_DIR / "training_data_additional",
 ]
 
-# VAL_DIR = DATA_DIR / "validation_data"
 
 # Hardware and reproducibility
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 SEED = 42
 
 # Dataset configuration
-# MODALITIES = ["t1c", "t1n", "t2f", "t2w"]
 LABEL_SUFFIX = "seg"
 
 # ROI_SIZE = (96, 96, 96)
@@ -30,6 +28,13 @@ SPACING = (1.0, 1.0, 1.0)
 IN_CHANNELS = 4
 OUT_CHANNELS = 5
 
+# Experiments
+MODEL_NAME = "unet3d"
+# MODEL_NAME = "resunet3d"
+# MODEL_NAME = "dense_unet_plus"
+# MODEL_NAME = "swin_unetr"
+# MODEL_NAME = "segmamba"
+
 # Training hyperparameters
 BATCH_SIZE = 1
 VAL_BATCH_SIZE = 1
@@ -38,9 +43,16 @@ NUM_WORKERS = 4
 MAX_EPOCHS = 100
 VAL_EVERY = 5
 
-# LEARNING_RATE = 1e-5 # For Segmamba
-LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-5
+
+if MODEL_NAME == "segmamba":
+    LEARNING_RATE = 1e-5
+    CLIP_GRAD = True
+    GRAD_CLIP_MAX_NORM = 1.0
+else:
+    LEARNING_RATE = 1e-4
+    CLIP_GRAD = False
+    GRAD_CLIP_MAX_NORM = None
 
 # Memory and performance
 SW_BATCH_SIZE = 2
@@ -59,14 +71,7 @@ CACHE_NAME = (
 )
 PERSISTENT_CACHE_DIR = CACHE_ROOT / CACHE_NAME
 
-# Experiments
-MODEL_NAME = "unet3d"
-# MODEL_NAME = "resunet3d"
-# MODEL_NAME = "dense_unet_plus"
-# MODEL_NAME = "swin_unetr"
-# MODEL_NAME = "segmamba"
-
 EXPERIMENT_NAME = (
     f"brats_{MODEL_NAME}_roi{ROI_SIZE[0]}_bs{BATCH_SIZE}"
-    f"_nworkers{NUM_WORKERS}_cv{N_FOLDS}"
+    f"_nworkers{NUM_WORKERS}_cv{N_FOLDS}_labelmapfix"
 )

@@ -18,8 +18,10 @@ def train_model(
     experiment_dir,
     roi_size=(96, 96, 96),
     sw_batch_size=1,
-    num_classes=5,
+    clip_grad=False,
+    grad_clip_max_norm=1.0,
 ):
+
     loss_function = DiceCELoss(to_onehot_y=True, softmax=True)
     best_metric = -1.0
     best_metric_epoch = -1
@@ -56,8 +58,14 @@ def train_model(
                 loss = loss_function(outputs, labels)
 
             scaler.scale(loss).backward()
-            # scaler.unscale_(optimizer) # Added for SegMamba
-            # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0) # Added for Segmamba
+
+            if clip_grad:
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(
+                    model.parameters(),
+                    max_norm=grad_clip_max_norm,
+                )
+
             scaler.step(optimizer)
             scaler.update()
 
