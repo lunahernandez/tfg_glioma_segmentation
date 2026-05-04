@@ -1,4 +1,8 @@
 import numpy as np
+
+if not hasattr(np, "Inf"):
+    np.Inf = np.inf
+
 import nibabel as nib
 import cc3d
 import scipy
