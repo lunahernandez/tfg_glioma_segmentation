@@ -4,6 +4,7 @@ import gc
 import json
 import math
 import statistics
+from typing import Any, Iterable
 
 import torch
 import torch.multiprocessing as mp
@@ -24,21 +25,44 @@ from src.utils.seed import set_seed
 from src.data.dataset import get_cases_from_dirs
 
 
-def safe_mean(values):
-    values = [v for v in values if v is not None and not math.isnan(v)]
-    if len(values) == 0:
+def safe_mean(values: Iterable[int | float | None]) -> float | None:
+    """Calculates the mean while ignoring invalid values.
+
+    Args:
+        values: Sequence of numeric values that may contain None or NaN values.
+
+    Returns:
+        Mean of the valid values as a float. Returns None if there are no valid
+        values.
+    """
+    valid_values = [v for v in values if v is not None and not math.isnan(v)]
+    if len(valid_values) == 0:
         return None
-    return float(sum(values) / len(values))
+    return float(sum(valid_values) / len(valid_values))
 
 
-def safe_std(values):
-    values = [v for v in values if v is not None and not math.isnan(v)]
-    if len(values) < 2:
-        return 0.0 if len(values) == 1 else None
-    return float(statistics.stdev(values))
+def safe_std(values: Iterable[int | float | None]) -> float | None:
+    """Calculates the standard deviation while ignoring invalid values.
+
+    Args:
+        values: Sequence of numeric values that may contain None or NaN values.
+
+    Returns:
+        Standard deviation of the valid values. Returns 0.0 if there is only
+        one valid value and None if there are no valid values.
+    """
+    valid_values = [v for v in values if v is not None and not math.isnan(v)]
+    if len(valid_values) < 2:
+        return 0.0 if len(valid_values) == 1 else None
+    return float(statistics.stdev(valid_values))
 
 
-def build_cache_dirs():
+def build_cache_dirs() -> dict[str, Path]:
+    """Builds the persistent cache directories.
+
+    Returns:
+        A dictionary with the cache directories used for training and evaluation.
+    """
     base = PERSISTENT_CACHE_DIR
     return {
         "train": base / "train",
@@ -46,7 +70,27 @@ def build_cache_dirs():
     }
 
 
-def build_train_val_loaders(train_cases, val_cases, cache_dirs):
+def build_train_val_loaders(
+    train_cases: list[dict[str, Any]],
+    val_cases: list[dict[str, Any]],
+    cache_dirs: dict[str, Path],
+) -> tuple[DataLoader, DataLoader]:
+    """Builds the training and validation data loaders.
+
+    Creates persistent datasets by applying the corresponding training and
+    validation transforms. Then, it builds the DataLoader objects used during
+    model training.
+
+    Args:
+        train_cases: List of cases used for training.
+        val_cases: List of cases used for internal validation.
+        cache_dirs: Dictionary with the persistent cache directories.
+
+    Returns:
+        A tuple (train_loader, val_loader), where train_loader is the DataLoader
+        used for training and val_loader is the DataLoader used for internal
+        validation.
+    """
     train_ds = PersistentDataset(
         data=train_cases,
         transform=get_train_transforms(roi_size=ROI_SIZE, spacing=SPACING),
@@ -84,7 +128,22 @@ def build_train_val_loaders(train_cases, val_cases, cache_dirs):
     return train_loader, val_loader
 
 
-def build_test_loader(test_cases, cache_dirs):
+def build_test_loader(
+    test_cases: list[dict[str, Any]],
+    cache_dirs: dict[str, Path],
+) -> DataLoader:
+    """Builds the test data loader.
+
+    Creates a persistent dataset by applying the test transforms and builds the
+    corresponding DataLoader.
+
+    Args:
+        test_cases: List of cases used for testing.
+        cache_dirs: Dictionary with the persistent cache directories.
+
+    Returns:
+        A DataLoader for the test set.
+    """
     test_ds = PersistentDataset(
         data=test_cases,
         transform=get_test_transforms(roi_size=ROI_SIZE, spacing=SPACING),
@@ -105,7 +164,12 @@ def build_test_loader(test_cases, cache_dirs):
     return test_loader
 
 
-def cleanup_memory():
+def cleanup_memory() -> None:
+    """Releases unused memory after a training or testing phase.
+
+    Runs Python garbage collection and, if a GPU is available, synchronizes the
+    device and clears the CUDA cache.
+    """
     gc.collect()
     if torch.cuda.is_available():
         try:
@@ -115,30 +179,67 @@ def cleanup_memory():
         torch.cuda.empty_cache()
 
 
-def save_json(path: Path, data: dict):
+def save_json(path: Path, data: dict[str, Any]) -> None:
+    """Saves a dictionary to a JSON file.
+
+    Args:
+        path: Path where the JSON file will be saved.
+        data: Dictionary containing the information to store.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
+
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
 
-def load_json(path: Path):
+def load_json(path: Path) -> dict[str, Any] | None:
+    """Loads a JSON file if it exists.
+
+    Args:
+        path: Path of the JSON file to load.
+
+    Returns:
+        A dictionary with the file contents. Returns None if the file does not
+        exist.
+    """
     if not path.exists():
         return None
+
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def build_base_results(
-    fold_idx,
-    train_cases,
-    val_cases,
-    test_cases,
-    best_val=None,
-    best_epoch=None,
-    train_time_sec=None,
-    train_memory_mb=None,
-    history=None,
-):
+    fold_idx: int,
+    train_cases: list[dict[str, Any]],
+    val_cases: list[dict[str, Any]],
+    test_cases: list[dict[str, Any]],
+    best_val: float | None = None,
+    best_epoch: int | None = None,
+    train_time_sec: float | None = None,
+    train_memory_mb: float | None = None,
+    history: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Builds the base result structure for a fold.
+
+    This structure contains information about the fold, the model, the
+    configuration used, the subset sizes, validation metrics, fields reserved
+    for test metrics, and the training history.
+
+    Args:
+        fold_idx: Fold index.
+        train_cases: Cases used for training.
+        val_cases: Cases used for internal validation.
+        test_cases: Cases used for testing.
+        best_val: Best Dice value obtained during validation.
+        best_epoch: Epoch where the best validation result was obtained.
+        train_time_sec: Total training time in seconds.
+        train_memory_mb: Maximum memory used during training, in megabytes.
+        history: Model training history.
+
+    Returns:
+        A dictionary with the base result structure for the fold.
+    """
     return {
         "fold": fold_idx,
         "model": MODEL_NAME,
@@ -179,7 +280,28 @@ def build_base_results(
     }
 
 
-def train_fold(fold_idx, train_cases, val_cases, test_cases):
+def train_fold(
+    fold_idx: int,
+    train_cases: list[dict[str, Any]],
+    val_cases: list[dict[str, Any]],
+    test_cases: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Trains a model on a specific fold.
+
+    Sets the fold seed, saves the data split, builds the training and validation
+    loaders, creates the model and optimizer, runs the training process, and
+    saves the results associated with the best checkpoint. It also records the
+    maximum memory used during training.
+
+    Args:
+        fold_idx: Index of the fold to train.
+        train_cases: Cases used for training.
+        val_cases: Cases used for internal validation.
+        test_cases: Cases reserved for testing.
+
+    Returns:
+        A dictionary with the training results for the fold.
+    """
     set_seed(SEED + fold_idx)
 
     fold_dir = EXPERIMENTS_DIR / EXPERIMENT_NAME / f"fold_{fold_idx}"
@@ -270,7 +392,31 @@ def train_fold(fold_idx, train_cases, val_cases, test_cases):
     return fold_results
 
 
-def test_fold(fold_idx, train_cases, val_cases, test_cases):
+def test_fold(
+    fold_idx: int,
+    train_cases: list[dict[str, Any]],
+    val_cases: list[dict[str, Any]],
+    test_cases: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Evaluates the best model of a fold on the test set.
+
+    Loads the checkpoint with the best validation performance, builds the test
+    loader, and computes lesion-wise metrics on the test set. It also records
+    the average inference time and the maximum memory used during evaluation.
+
+    Args:
+        fold_idx: Index of the fold to evaluate.
+        train_cases: Cases used for training.
+        val_cases: Cases used for internal validation.
+        test_cases: Cases used for testing.
+
+    Returns:
+        A dictionary with the updated results for the fold.
+
+    Raises:
+        Exception: Re-raises any error produced during test evaluation after
+        storing it in the results file.
+    """
     set_seed(SEED + fold_idx)
 
     fold_dir = EXPERIMENTS_DIR / EXPERIMENT_NAME / f"fold_{fold_idx}"
@@ -300,15 +446,12 @@ def test_fold(fold_idx, train_cases, val_cases, test_cases):
     )
 
     existing_results = load_json(fold_dir / "results.json")
-    if existing_results is not None:
-        existing_results.pop("test_cases", None)
 
     if existing_results is None:
         existing_results = build_base_results(
             fold_idx=fold_idx,
             train_cases=train_cases,
             val_cases=val_cases,
-            test_cases=test_cases,
             best_val=best_val,
             best_epoch=best_epoch,
         )
@@ -341,11 +484,9 @@ def test_fold(fold_idx, train_cases, val_cases, test_cases):
         existing_results["inference_time_per_case_sec"] = test_metrics["avg_inference_time_sec"]
         existing_results["test_memory_mb"] = test_mem
         existing_results["test_error"] = None
-        existing_results.pop("test_cases", None)
 
     except Exception as e:
         existing_results["test_error"] = repr(e)
-        existing_results.pop("test_cases", None)
         save_json(fold_dir / "results.json", existing_results)
         raise
 
@@ -358,7 +499,30 @@ def test_fold(fold_idx, train_cases, val_cases, test_cases):
     return existing_results
 
 
-def run_fold(fold_idx, train_cases, val_cases, test_cases, mode):
+def run_fold(
+    fold_idx: int,
+    train_cases: list[dict[str, Any]],
+    val_cases: list[dict[str, Any]],
+    test_cases: list[dict[str, Any]],
+    mode: str,
+) -> dict[str, Any]:
+    """Runs a fold according to the selected mode.
+
+    Allows running only training, only testing, or both phases sequentially.
+
+    Args:
+        fold_idx: Fold index.
+        train_cases: Cases used for training.
+        val_cases: Cases used for internal validation.
+        test_cases: Cases used for testing.
+        mode: Execution mode.
+
+    Returns:
+        A dictionary with the results generated by the executed phase.
+
+    Raises:
+        ValueError: If the selected mode is not supported.
+    """
     if mode == "train":
         return train_fold(fold_idx, train_cases, val_cases, test_cases)
 
@@ -373,13 +537,30 @@ def run_fold(fold_idx, train_cases, val_cases, test_cases, mode):
     raise ValueError(f"Unsupported mode: {mode}")
 
 
-def aggregate_cv_results(fold_results):
+def aggregate_cv_results(
+    fold_results: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Aggregates the results obtained from cross-validation folds.
+
+    Computes means and standard deviations of the main validation and test
+    metrics. It also aggregates the lesion-wise results for each BraTS region.
+
+    Args:
+        fold_results: List of dictionaries with the results of each fold.
+
+    Returns:
+        A dictionary with the global cross-validation summary.
+    """
     summary = {
         "model": MODEL_NAME,
         "n_folds": N_FOLDS,
         "folds": fold_results,
-        "cv_best_val_dice_mean": safe_mean([f["best_val_dice"] for f in fold_results]),
-        "cv_best_val_dice_std": safe_std([f["best_val_dice"] for f in fold_results]),
+        "cv_best_val_dice_mean": safe_mean(
+            [f["best_val_dice"] for f in fold_results]
+        ),
+        "cv_best_val_dice_std": safe_std(
+            [f["best_val_dice"] for f in fold_results]
+        ),
         "cv_test_lesionwise_mean_dice_mean": safe_mean(
             [f["test_lesionwise_mean_dice"] for f in fold_results]
         ),
@@ -419,7 +600,14 @@ def aggregate_cv_results(fold_results):
     return summary
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
+    """Parses command-line arguments.
+
+    Allows selecting the execution mode and, optionally, a specific fold.
+
+    Returns:
+        An object containing the parsed arguments.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--mode",
@@ -433,10 +621,18 @@ def parse_args():
         default=None,
         help="If specified, executes only that fold.",
     )
+
     return parser.parse_args()
 
 
-def main():
+def main() -> None:
+    """Runs the main experimental workflow.
+
+    Loads the available cases, creates the cross-validation folds, splits each
+    fold into training, validation, and test subsets, runs the selected mode,
+    and saves the results. If all folds are executed, it aggregates the final
+    results into a cross-validation summary file.
+    """
     args = parse_args()
     set_seed(SEED)
 

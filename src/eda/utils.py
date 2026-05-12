@@ -20,23 +20,22 @@ LABEL_NAMES_ES = {
 
 def load_nifti(file_path: str) -> Tuple[np.ndarray, nib.nifti1.Nifti1Header]:
     """
-    Carga un archivo NIfTI y extrae sus datos volumétricos y metadatos.
+    Loads a NIfTI file and extracts its volumetric data and metadata.
 
     Args:
-        file_path (str): Ruta al archivo .nii o .nii.gz.
+        file_path: Path to the .nii or .nii.gz file.
 
     Returns:
-        Una tupla (data, header) donde data es una matriz 3D con los datos 
-        de intensidad de la imagen y header son los metadatos.
+        A tuple (data, header), where data is a 3D array containing the image
+        intensity values and header contains the metadata.
 
     Raises:
-        FileNotFoundError: La ruta especificada no existe en el sistema.
+        FileNotFoundError: If the specified path does not exist.
     """
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Archivo no encontrado: {file_path}")
+        raise FileNotFoundError(f"File not found: {file_path}")
     img = nib.load(file_path)
     return img.get_fdata(), img.header
-
 
 def save_mri_sequences_plot(
         patient_id: str, 
@@ -45,17 +44,16 @@ def save_mri_sequences_plot(
         slice_idx: Optional[int] = None
 ) -> None:
     """
-    Genera y guarda una figura con 4 subfiguras (2x2) comparando las secuencias 
-    principales (T1, T1c, T2 y FLAIR) de una resonancia magnética en formato PDF
-    en la ruta especificada.
+    Generates and saves a figure with four subplots arranged in a 2x2 grid,
+    comparing the main MRI sequences (T1, T1c, T2 and FLAIR). The figure is
+    exported as a PDF file to the specified output directory.
 
     Args:
-        patient_id (str): Identificador único del paciente.
-        patient_dir (str): Ruta al directorio que contiene los archivos NIfTI del paciente.
-        output_dir (str): Ruta al directorio donde se exportará el archivo PDF.
-        slice_idx (Optional[int], opcional): Índice del corte axial a visualizar. Si es None, 
-            se calcula automáticamente el corte con mayor número de vóxeles tumorales. 
-            Por defecto es None.
+        patient_id: Unique patient identifier.
+        patient_dir: Path to the directory containing the patient's NIfTI files.
+        output_dir: Path to the directory where the PDF file will be exported.
+        slice_idx: Axial slice index to visualize. If None, the slice with the
+            largest number of tumor voxels is selected automatically.
     """
     sequences = ['t1n', 't1c', 't2w', 't2f']
     titles = ['T1 Nativa', 'T1 Contraste', 'T2 Ponderada', 'T2 FLAIR']
@@ -65,7 +63,7 @@ def save_mri_sequences_plot(
         seg_data, _ = load_nifti(seg_path)
         tumor_pixels_per_slice = np.sum(seg_data > 0, axis=(0, 1))
         slice_idx = int(np.argmax(tumor_pixels_per_slice))
-        print(f"Slice automático para visualización: {slice_idx}")
+        print(f"Automatic slice for visualization: {slice_idx}")
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 12))
     
@@ -111,16 +109,16 @@ def save_mri_segmentation_plot(
         slice_idx: Optional[int] = None
 ) -> None:
     """
-    Genera y guarda una figura de un corte axial de la secuencia T2 FLAIR y 
-    la máscara de segmentación superpuesta en formato PDF en la ruta especificada.
+    Generates and saves a figure showing an axial slice of the T2 FLAIR sequence
+    with the segmentation mask overlaid. The figure is exported as a PDF file to
+    the specified output directory.
 
     Args:
-        patient_id (str): Identificador único del paciente.
-        patient_dir (str): Ruta al directorio que contiene los archivos NIfTI del paciente.
-        output_dir (str): Ruta al directorio donde se exportará el archivo PDF.
-        slice_idx (Optional[int], opcional): Índice del corte axial a visualizar. Si es None, 
-            se calcula automáticamente el corte con mayor número de vóxeles tumorales. 
-            Por defecto es None.
+        patient_id: Unique patient identifier.
+        patient_dir: Path to the directory containing the patient's NIfTI files.
+        output_dir: Path to the directory where the PDF file will be exported.
+        slice_idx: Axial slice index to visualize. If None, the slice with the
+            largest number of tumor voxels is selected automatically.
     """
     color_map = {
         1: '#FF5C5C', # NETC
@@ -186,24 +184,24 @@ def save_mri_segmentation_plot(
 
 def check_image_dimensions(patient_id: str, patient_dir: str) -> None:
     """
-    Verifica que las dimensiones de las secuencias NIfTI de un paciente
-    coincidan. Muestra por consola el resultado.
+    Checks whether the NIfTI sequences of a given patient have matching
+    dimensions. The result is printed to the console.
 
     Args:
-        patient_id (str): Identificador único del paciente.
-        patient_dir (str): Ruta al directorio que contiene los archivos NIfTI del paciente.
+        patient_id: Unique patient identifier.
+        patient_dir: Path to the directory containing the patient's NIfTI files.
     """
     mri_sequences_files = {
-        'T1 Nativa': f"{patient_id}-t1n.nii.gz",
-        'T1 Contraste': f"{patient_id}-t1c.nii.gz",
-        'T2 Ponderada': f"{patient_id}-t2w.nii.gz",
+        'Native T1': f"{patient_id}-t1n.nii.gz",
+        'Contrast-enhanced T1': f"{patient_id}-t1c.nii.gz",
+        'T2-weighted': f"{patient_id}-t2w.nii.gz",
         'T2 FLAIR': f"{patient_id}-t2f.nii.gz",
-        'Segmentación': f"{patient_id}-seg.nii.gz"
+        'Segmentation': f"{patient_id}-seg.nii.gz"
     }
     
-    print(f"\nVerificando dimensiones para el paciente: {patient_id}")
+    print(f"\nChecking dimensions for patient: {patient_id}")
     print("-" * 75)
-    print(f"{'Secuencia':<15} | {'Dimensiones (Vóxeles)':<25} | {'Resolución Física (mm)':<25}")
+    print(f"{'Sequence':<20} | {'Dimensions (Voxels)':<25} | {'Physical Resolution (mm)':<25}")
     print("-" * 75)
     
     reference_shape = None
@@ -214,25 +212,24 @@ def check_image_dimensions(patient_id: str, patient_dir: str) -> None:
         try:
             img = nib.load(file_path)
             shape = img.shape
-            physical_resolution = img.header.get_zooms() 
+            physical_resolution = img.header.get_zooms()
             formatted_resolution = tuple(round(z, 4) for z in physical_resolution)
-            print(f"{sequence_name:<15} | {str(shape):<25} | {str(formatted_resolution):<25}")
+            print(f"{sequence_name:<20} | {str(shape):<25} | {str(formatted_resolution):<25}")
             
             if reference_shape is None:
                 reference_shape = shape
             elif shape != reference_shape:
                 all_match = False
-                print(f"[ADVERTENCIA] Las dimensiones de {sequence_name} no coincide con la referencia {reference_shape}")
-                
+                print(f"[WARNING] The dimensions of {sequence_name} do not match the reference shape {reference_shape}")
         except FileNotFoundError:
-            print(f"{sequence_name:<15} | {'[Archivo no encontrado]':<25} | {'-':<25}")
+            print(f"{sequence_name:<20} | {'[File not found]':<25} | {'-':<25}")
             all_match = False
             
     print("-" * 75)
     if all_match:
-        print("ESTADO: OK. Todas las secuencias tienen las mismas dimensiones.")
+        print("STATUS: OK. All sequences have matching dimensions.")
     else:
-        print("ESTADO: ADVERTENCIA. Hay diferencias en las dimensiones.")
+        print("STATUS: WARNING. Differences in dimensions were found.")
     print("-" * 75)
 
 
@@ -241,18 +238,18 @@ def verify_dataset_dimensions(
         sequences: list[str] = ['t1n', 't1c', 't2w', 't2f', 'seg']
 ) -> None:
     """
-    Recorre todas las carpetas de pacientes en el dataset y verifica que 
-    todos los archivos NIfTI compartan las mismas dimensiones y resolución.
+    Iterates over all patient folders in the dataset and verifies that all
+    selected NIfTI files share the same dimensions and physical resolution.
 
     Args:
-        dataset_dir (str): Ruta al directorio raíz que contiene las carpetas de pacientes.
-        sequences (list[str], optional): Secuencias a verificar.
+        dataset_dir: Path to the root directory containing patient folders.
+        sequences: List of sequences to verify.
     """
     patient_directories = [f for f in os.listdir(dataset_dir) 
                            if os.path.isdir(os.path.join(dataset_dir, f))]
     
     total_patients = len(patient_directories)
-    print(f"\nIniciando verificación de dimensiones de {total_patients} pacientes...")
+    print(f"\nStarting dimension verification for {total_patients} patients...")
     print("-" * 75)
     
     expected_shape = None
@@ -265,7 +262,7 @@ def verify_dataset_dimensions(
         patient_path = os.path.join(dataset_dir, patient_id)
         
         if i % 50 == 0 or i == total_patients:
-            print(f"Procesando: {i}/{total_patients} pacientes...")
+            print(f"Processing: {i}/{total_patients} patients...")
             
         for seq in sequences:
             sequence_filename = f"{patient_id}-{seq}.nii.gz"
@@ -294,17 +291,17 @@ def verify_dataset_dimensions(
                 dimension_anomalies.append({'patient': patient_id, 'file': sequence_filename, 'error': str(e)})
 
     print("\n" + "=" * 75)
-    print("VERIFICACIÓN DEL DATASET")
+    print("DATASET VERIFICATION")
     print("=" * 75)
     
     if not dimension_anomalies and not missing_files:
-        print("RESULTADO: OK.")
-        print(f"Todos los archivos comparten las dimensiones {expected_shape} y resolución {expected_physical_resolution} mm.")
+        print("RESULT: OK.")
+        print(f"All files share the same dimensions {expected_shape} and physical resolution {expected_physical_resolution} mm.")
     else:
         if missing_files:
-            print(f"[ADVERTENCIA] Faltan {len(missing_files)} archivos.")
+            print(f"[WARNING] {len(missing_files)} files are missing.")
         if dimension_anomalies:
-            print(f"[ADVERTENCIA] Se encontraron {len(dimension_anomalies)} archivos con dimensiones distintas o corruptos.")
+            print(f"[WARNING] {len(dimension_anomalies)} files have different dimensions or are corrupted.")
             for anomaly in dimension_anomalies[:10]:
                 print(f"  - {anomaly['file']} -> Shape: {anomaly.get('shape', 'N/A')}")
 
@@ -314,32 +311,32 @@ def extract_voxel_statistics(
     csv_path: str
 ) -> pd.DataFrame:
     """
-    Extrae el conteo de vóxeles de las máscaras de segmentación y lo guarda en un CSV.
-    Si el CSV ya existe, carga los datos directamente desde el archivo.
+    Extracts voxel counts from segmentation masks and saves them to a CSV file.
+    If the CSV file already exists, the data are loaded directly from disk.
 
     Args:
-        dataset_directories (list[str]): Lista de rutas a los directorios de datasets.
-        csv_path (str): Ruta completa donde se guardará o leerá el archivo CSV.
+        dataset_directories: List of paths to the dataset directories.
+        csv_path: Full path where the CSV file will be saved or loaded from.
 
     Returns:
-        Un dataframe con las estadísticas de vóxeles obtenidas.
+        A dataframe containing the extracted voxel statistics.
     """
     if os.path.exists(csv_path):
-        print(f"\nCargando estadísticas desde {csv_path}...")
+        print(f"\nLoading statistics from {csv_path}...")
         return pd.read_csv(csv_path)
 
-    print("\nExtrayendo datos de segmentación...")
+    print("\nExtracting segmentation data...")
     if isinstance(dataset_directories, str):
         dataset_directories = [dataset_directories]
 
     results = []
 
     for dataset_dir in dataset_directories:
-        print(f"\nAnalizando directorio: {dataset_dir}")
+        print(f"\nAnalyzing directory: {dataset_dir}")
         patient_directories = [f for f in os.listdir(dataset_dir) 
                                if os.path.isdir(os.path.join(dataset_dir, f))]
         
-        for patient_id in tqdm(patient_directories, desc=f"Procesando {os.path.basename(dataset_dir)}"):
+        for patient_id in tqdm(patient_directories, desc=f"Processing {os.path.basename(dataset_dir)}"):
             seg_file = os.path.join(dataset_dir, patient_id, f"{patient_id}-seg.nii.gz")
             
             if not os.path.exists(seg_file):
@@ -368,15 +365,15 @@ def extract_voxel_statistics(
 
 def show_class_balance(df: pd.DataFrame) -> None:
     """
-    Calcula e imprime las estadísticas de desbalance de clases por consola.
+    Computes and prints class imbalance statistics to the console.
 
     Args:
-        df (pd.DataFrame): DataFrame con los conteos de vóxeles por paciente.
+        df: DataFrame containing voxel counts per patient.
     """
     total_voxels = df['Total_Voxels'].sum()
     
     if total_voxels == 0:
-        print("\n[ADVERTENCIA]: Dataset sin vóxeles.")
+        print("\n[WARNING]: Dataset contains no voxels.")
         return
 
     bg_pct = (df['Background'].sum() / total_voxels) * 100
@@ -386,31 +383,31 @@ def show_class_balance(df: pd.DataFrame) -> None:
     total_tumor = sum(tumor_counts.values())
     
     print("\n" + "=" * 75)
-    print("Desbalance del dataset")
+    print("Dataset class imbalance")
     print("=" * 75)
-    print(f"Pacientes analizados : {len(df)}")
-    print(f"Vóxeles totales      : {total_voxels:,}")
-    print(f"Fondo (Background)   : {bg_pct:.4f}%\n")
+    print(f"Patients analyzed : {len(df)}")
+    print(f"Total voxels      : {total_voxels:,}")
+    print(f"Background        : {bg_pct:.4f}%\n")
     
     if total_tumor > 0:
-        print("Clases del tumor (Excluyendo fondo):")
+        print("Tumor classes, excluding background:")
         for cls_name, count in tumor_counts.items():
             pct = (count / total_tumor) * 100
-            print(f"    - {cls_name:<4} : {pct:>5.2f}%  ({count:>12,} vóxeles)")
+            print(f"    - {cls_name:<4} : {pct:>5.2f}%  ({count:>12,} voxels)")
     else:
-        print("[ADVERTENCIA] No se detectaron vóxeles de tumor.")
+        print("[WARNING] No tumor voxels were detected.")
         
     print("=" * 75 + "\n")
 
 
 def save_eda_figures(df: pd.DataFrame, output_dir: str) -> None:
     """
-    Genera y guarda en formato PDF las gráficas globales de frecuencia y volumen
-    obtenidas a partir de un dataframe en el directorio especificado.
+    Generates and saves global frequency and volume figures as PDF files,
+    using voxel statistics from a dataframe.
 
     Args:
-        df (pd.DataFrame): DataFrame con los conteos de vóxeles por paciente.
-        output_dir (str): Directorio donde se guardarán los archivos PDF.
+        df: DataFrame containing voxel counts per patient.
+        output_dir: Directory where the PDF files will be saved.
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -432,8 +429,15 @@ def save_eda_figures(df: pd.DataFrame, output_dir: str) -> None:
     
     for bar in bars1:
         yval = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2, yval + 1.5, f'{yval:.1f}%', 
-                 ha='center', va='bottom', fontsize=18, fontfamily='serif')
+        ax1.text(
+            bar.get_x() + bar.get_width() / 2,
+            yval + 1.5,
+            f'{yval:.1f}%', 
+            ha='center',
+            va='bottom',
+            fontsize=18,
+            fontfamily='serif'
+        )
                  
     fig1.tight_layout()
     fig1.savefig(os.path.join(output_dir, "frecuencia_global.pdf"))
@@ -454,14 +458,23 @@ def save_eda_figures(df: pd.DataFrame, output_dir: str) -> None:
     ax2.set_ylabel("Porcentaje del volumen segmentado (%)", fontsize=18, fontfamily='serif')
     ax2.set_ylim(0, max(vol_pct) + 12) 
     ax2.tick_params(axis='both', labelsize=16)
+
     for label in ax2.get_xticklabels() + ax2.get_yticklabels():
         label.set_fontfamily('serif')
+
     ax2.grid(axis='y', linestyle='--', alpha=0.5)
     
     for bar in bars2:
         yval = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width()/2, yval + 0.8, f'{yval:.1f}%', 
-                 ha='center', va='bottom', fontsize=18, fontfamily='serif')
+        ax2.text(
+            bar.get_x() + bar.get_width() / 2,
+            yval + 0.8,
+            f'{yval:.1f}%', 
+            ha='center',
+            va='bottom',
+            fontsize=18,
+            fontfamily='serif'
+        )
                  
     fig2.tight_layout()
     fig2.savefig(os.path.join(output_dir, "volumen_global.pdf"))

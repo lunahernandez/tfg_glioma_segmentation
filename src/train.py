@@ -1,27 +1,64 @@
 import time
+from pathlib import Path
+from typing import Any
+
 import torch
+from torch.utils.data import DataLoader
+from torch.optim import Optimizer
 from tqdm import tqdm
 from monai.losses import DiceCELoss
+
 from src.utils.meters import AverageMeter
 from src.validate import validate
 from src.utils.checkpoints import save_checkpoint
 
 
 def train_model(
-    model,
-    train_loader,
-    val_loader,
-    device,
-    optimizer,
-    max_epochs,
-    val_every,
-    experiment_dir,
-    roi_size=(96, 96, 96),
-    sw_batch_size=1,
-    clip_grad=False,
-    grad_clip_max_norm=1.0,
-):
+    model: torch.nn.Module,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    device: torch.device,
+    optimizer: Optimizer,
+    max_epochs: int,
+    val_every: int,
+    experiment_dir: Path,
+    roi_size: tuple[int, int, int] = (128, 128, 128),
+    sw_batch_size: int = 1,
+    clip_grad: bool = False,
+    grad_clip_max_norm: float = 1.0,
+) -> dict[str, Any]:
+    """Trains a segmentation model with mixed precision and periodic validation.
 
+    This function handles the training loop, applying Automatic Mixed Precision 
+    (AMP) if a CUDA device is used. It evaluates the model on the validation 
+    set every `val_every` epochs, tracks the mean Dice and HD95 metrics, and 
+    saves the best model checkpoint based on the mean Dice score.
+
+    Args:
+        model: The PyTorch neural network module to train.
+        train_loader: DataLoader providing the training set batches.
+        val_loader: DataLoader providing the validation set batches.
+        device: The computation device (e.g., 'cuda' or 'cpu').
+        optimizer: The PyTorch optimizer used to update the weights.
+        max_epochs: Total number of training epochs to run.
+        val_every: Frequency (in epochs) at which validation is performed.
+        experiment_dir: Directory where the best model checkpoint will be saved.
+        roi_size: Spatial dimensions of the region of interest for sliding 
+            window inference during validation.
+        sw_batch_size: Number of sliding windows to process in a single batch 
+            during validation inference.
+        clip_grad: Whether to apply gradient clipping to prevent exploding gradients.
+        grad_clip_max_norm: Maximum allowed norm for the gradients if clipping 
+            is enabled.
+
+    Returns:
+        A dictionary containing the overall training summary:
+            - "best_val_dice" (float): The highest mean Dice score achieved.
+            - "best_epoch" (int): The epoch at which the best score was achieved.
+            - "total_train_time_sec" (float): Total training time in seconds.
+            - "history" (list[dict]): List of dictionaries containing the metric 
+              history per epoch.
+    """
     loss_function = DiceCELoss(to_onehot_y=True, softmax=True)
     best_metric = -1.0
     best_metric_epoch = -1

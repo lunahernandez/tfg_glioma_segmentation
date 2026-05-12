@@ -3,9 +3,9 @@ from tqdm import tqdm
 from monai.inferers import sliding_window_inference
 
 from src.utils.brats_regions import (
-    init_region_stats,
-    update_region_stats,
-    finalize_region_stats,
+    initialize_region_metrics,
+    update_region_metrics,
+    summarize_region_metrics,
 )
 
 
@@ -13,7 +13,7 @@ def validate(
     model: torch.nn.Module,
     data_loader,
     device: torch.device,
-    roi_size: tuple[int, int, int] = (96, 96, 96),
+    roi_size: tuple[int, int, int] = (128, 128, 128),
     sw_batch_size: int = 1,
 ) -> dict:
     """Evaluates the model on the validation set.
@@ -36,7 +36,7 @@ def validate(
     model.eval()
 
     use_amp = device.type == "cuda"
-    region_stats = init_region_stats()
+    region_stats = initialize_region_metrics()
 
     progress_bar = tqdm(
         data_loader,
@@ -58,6 +58,6 @@ def validate(
                 )
 
             pred_labels = torch.argmax(outputs, dim=1)
-            update_region_stats(region_stats, pred_labels, labels)
+            update_region_metrics(region_stats, pred_labels, labels)
 
-    return finalize_region_stats(region_stats)
+    return summarize_region_metrics(region_stats)

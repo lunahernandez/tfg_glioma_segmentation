@@ -16,7 +16,7 @@ from monai.transforms import (
 
 
 def get_train_transforms(
-    roi_size: tuple[int, int, int] = (96, 96, 96),
+    roi_size: tuple[int, int, int] = (128, 128, 128),
     spacing: tuple[float, float, float] = (1.0, 1.0, 1.0),
 ) -> Compose:
     """Builds the transformations for the training set.
@@ -59,7 +59,7 @@ def get_train_transforms(
 
 
 def get_val_transforms(
-    roi_size: tuple[int, int, int] = (96, 96, 96),
+    roi_size: tuple[int, int, int] = (128, 128, 128),
     spacing: tuple[float, float, float] = (1.0, 1.0, 1.0),
 ) -> Compose:
     """Builds the transformations for the validation set.
@@ -91,7 +91,7 @@ def get_val_transforms(
 
 
 def get_test_transforms(
-    roi_size: tuple[int, int, int] = (96, 96, 96),
+    roi_size: tuple[int, int, int] = (128, 128, 128),
     spacing: tuple[float, float, float] = (1.0, 1.0, 1.0),
 ) -> Compose:
     """Builds the transformations for the testing set.

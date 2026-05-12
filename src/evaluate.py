@@ -2,35 +2,73 @@ import os
 import time
 import tempfile
 from pathlib import Path
+from typing import Any, Iterable
 
 import nibabel as nib
 import pandas as pd
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 from monai.inferers import sliding_window_inference
 
 from src.utils.brats_lesionwise import get_LesionWiseResults
 
 
-def _mean(values):
-    values = [float(v) for v in values if v is not None]
-    return float(sum(values) / len(values)) if len(values) > 0 else None
+def get_mean(values: Iterable[float | None]) -> float | None:
+    """Calculates the mean of a sequence of values, ignoring None entries.
+
+    Args:
+        values: An iterable containing numerical values and/or Nones.
+
+    Returns:
+        The calculated mean as a float. Returns None if the iterable is 
+        empty or contains only None values.
+    """
+    valid_values = [float(v) for v in values if v is not None]
+    return float(sum(valid_values) / len(valid_values)) if len(valid_values) > 0 else None
 
 
 def evaluate_test(
-    model,
-    test_loader,
-    device,
-    roi_size=(96, 96, 96),
-    sw_batch_size=1,
-    output_dir=None,
-):
+    model: torch.nn.Module,
+    test_loader: DataLoader,
+    device: torch.device,
+    roi_size: tuple[int, int, int] = (128, 128, 128),
+    sw_batch_size: int = 1,
+    output_dir: str | Path | None = None,
+) -> dict[str, Any]:
+    """Evaluates the model on the test set using lesion-wise metrics.
+
+    This function performs sliding window inference on the provided test data. 
+    It temporarily saves the predicted and ground truth arrays as NIfTI files 
+    to process them through the BraTS lesion-wise evaluator. Finally, 
+    it aggregates the Dice and HD95 scores across all evaluated regions.
+
+    Args:
+        model: The PyTorch neural network module to evaluate.
+        test_loader: DataLoader providing the test dataset batches.
+        device: The computation device (e.g., 'cuda' or 'cpu').
+        roi_size: Spatial dimensions of the region of interest for sliding 
+            window inference.
+        sw_batch_size: Number of sliding windows to process simultaneously.
+        output_dir: Directory where temporary NIfTI files will be saved.
+
+    Returns:
+        A dictionary containing the test evaluation summary:
+            - "mean_lesionwise_dice" (float | None): Global mean lesion-wise Dice.
+            - "mean_lesionwise_hd95" (float | None): Global mean lesion-wise HD95.
+            - "by_label" (dict): Detailed metric summary for each BraTS region.
+            - "avg_inference_time_sec" (float): Average inference time per case.
+            - "total_inference_time_sec" (float): Total elapsed inference time.
+
+    Raises:
+        ValueError: If `output_dir` is not provided (None).
+    """
     model.eval()
 
     if output_dir is None:
         raise ValueError(
-            "output_dir is mandatory to save predictions and lesion-wise metrics."
+            "output_dir is mandatory to save temporary NIfTI files for lesion-wise evaluation."
         )
 
     output_dir = Path(output_dir)
@@ -40,7 +78,7 @@ def evaluate_test(
     n_cases = 0
     use_amp = device.type == "cuda"
 
-    by_label = {
+    by_label: dict[str, dict[str, list[float]]] = {
         "WT": {"dice": [], "hd95": []},
         "TC": {"dice": [], "hd95": []},
         "NETC": {"dice": [], "hd95": []},
@@ -89,8 +127,8 @@ def evaluate_test(
 
                 affine = np.diag([1.0, 1.0, 1.0, 1.0])
 
-                with tempfile.TemporaryDirectory(dir=output_dir) as tmp_dir:
-                    tmp_dir = Path(tmp_dir)
+                with tempfile.TemporaryDirectory(dir=output_dir) as tmp_dir_str:
+                    tmp_dir = Path(tmp_dir_str)
                     pred_path = tmp_dir / f"{case_id}_pred.nii.gz"
                     gt_path = tmp_dir / f"{case_id}_gt.nii.gz"
 
@@ -131,8 +169,8 @@ def evaluate_test(
     global_hd95 = []
 
     for label, values in by_label.items():
-        mean_dice = _mean(values["dice"])
-        mean_hd95 = _mean(values["hd95"])
+        mean_dice = get_mean(values["dice"])
+        mean_hd95 = get_mean(values["hd95"])
 
         by_label_mean[label] = {
             "lesionwise_dice": mean_dice,
@@ -149,8 +187,8 @@ def evaluate_test(
     avg_time = total_time / n_cases if n_cases > 0 else 0.0
 
     return {
-        "mean_lesionwise_dice": _mean(global_dice),
-        "mean_lesionwise_hd95": _mean(global_hd95),
+        "mean_lesionwise_dice": get_mean(global_dice),
+        "mean_lesionwise_hd95": get_mean(global_hd95),
         "by_label": by_label_mean,
         "avg_inference_time_sec": float(avg_time),
         "total_inference_time_sec": float(total_time),
