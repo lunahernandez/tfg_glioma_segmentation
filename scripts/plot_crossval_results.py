@@ -167,7 +167,7 @@ def save_bar_plot(
     yerr = none_to_nan(stds)
 
     colors = [
-        get_model_color(label, index)
+        get_model_color(label)
         for index, label in enumerate(labels)
     ]
 
@@ -225,7 +225,7 @@ def save_lollipop_plot(
     errors = np.array(none_to_nan(stds), dtype=float)
 
     colors = [
-        get_model_color(label, index)
+        get_model_color(label)
         for index, label in enumerate(labels)
     ]
 
@@ -346,7 +346,7 @@ def save_grouped_region_plot(
             yerr=none_to_nan(stds),
             capsize=3,
             label=result["model"],
-            color=get_model_color(result["model"], i),
+            color=get_model_color(result["model"]),
             edgecolor="black",
             linewidth=0.9,
             alpha=0.9,
@@ -498,7 +498,7 @@ def save_dice_vs_cost_plot(
         plt.scatter(
             x,
             y,
-            color=get_model_color(result["model"], i),
+            color=get_model_color(result["model"]),
             edgecolor="black",
             linewidth=0.8,
             s=80,
@@ -622,7 +622,7 @@ def save_bubble_tradeoff_plot(
             x,
             y,
             s=size,
-            color=get_model_color(model, i),
+            color=get_model_color(model),
             edgecolor="black",
             linewidth=1.2,
             alpha=0.85,
@@ -715,7 +715,7 @@ def save_training_curve_plot(
         means_array = np.array(means, dtype=float)
         stds_array = np.array(stds, dtype=float)
 
-        color = get_model_color(result["model"], i)
+        color = get_model_color(result["model"])
         marker = "o" if show_markers else None
 
         plt.plot(
