@@ -8,6 +8,7 @@ import numpy as np
 from scipy.stats import friedmanchisquare, wilcoxon
 
 from utils_results import (
+    REGION_NAMES,
     REGION_TEST_NAMES,
     collect_results,
     collect_fold_level_points,
@@ -532,8 +533,8 @@ def save_et_vs_netc_plot(
 
     format_axes(
         title=title,
-        xlabel="Dice lesion-wise (ET)",
-        ylabel="Dice lesion-wise (NETC)",
+        xlabel="Coeficiente Dice lesion-wise (ET)",
+        ylabel="Coeficiente Dice lesion-wise (NETC)",
         grid_axis="both",
     )
 
@@ -619,7 +620,6 @@ def save_model_significance_tests(
                     "statistic": float(statistic),
                     "p_value": float(p_value),
                     "p_value_corrected": None,
-                    "significance": get_significance_stars(float(p_value)),
                 }
             )
 
@@ -645,7 +645,6 @@ def save_model_significance_tests(
                     "statistic": statistic,
                     "p_value": p_value,
                     "p_value_corrected": None,
-                    "significance": None,
                 }
             )
 
@@ -655,8 +654,262 @@ def save_model_significance_tests(
 
         for row, corrected_p in zip(pairwise_rows, corrected_p_values):
             row["p_value_corrected"] = corrected_p
-            row["significance"] = get_significance_stars(corrected_p)
             rows.append(row)
+
+    write_csv(output_path, rows)
+
+
+def get_region_fold_metric(
+    fold: dict[str, Any],
+    region_name: str,
+    metric_key: str,
+) -> float | None:
+    """Get a regional metric from a fold.
+
+
+    Args:
+        fold: The fold-level result dictionary.
+        region_name: The BraTS region name.
+        metric_key: The regional metric to extract.
+
+
+    Returns:
+        The metric value as a float, or ``None`` if the metric is not available.
+    """
+    region_metrics = fold.get("test_lesionwise_by_label", {}).get(region_name, {})
+    value = region_metrics.get(metric_key)
+
+
+    return float(value) if is_valid_number(value) else None
+
+
+
+
+def collect_region_metric_by_model(
+    results: list[dict[str, Any]],
+    region_name: str,
+    metric_key: str,
+) -> dict[str, dict[int, float]]:
+    """Collect a regional metric by model and fold.
+
+
+    Args:
+        results: The cross-validation results loaded from JSON files.
+        region_name: The BraTS region name.
+        metric_key: The regional metric to collect.
+
+
+    Returns:
+        A dictionary mapping each model to its fold-level metric values.
+    """
+    values_by_model: dict[str, dict[int, float]] = {}
+
+
+    for result in results:
+        model_name = result["model"]
+        values_by_fold: dict[int, float] = {}
+
+
+        for fold in result.get("folds", []):
+            fold_id = fold.get("fold")
+            value = get_region_fold_metric(
+                fold=fold,
+                region_name=region_name,
+                metric_key=metric_key,
+            )
+
+
+            if fold_id is not None and is_valid_number(value):
+                values_by_fold[int(fold_id)] = float(value)
+
+
+        values_by_model[model_name] = values_by_fold
+
+
+    return values_by_model
+
+
+
+
+def get_friedman_critical_values(
+    n_blocks: int,
+    n_models: int,
+) -> tuple[float | None, float | None]:
+    """Get Friedman critical values for the current experimental setting.
+
+
+    Args:
+        n_blocks: The number of paired blocks.
+        n_models: The number of compared models.
+
+
+    Returns:
+        The critical values for alpha 0.05 and alpha 0.01. Returns ``None``
+        values if the current setting is not included.
+    """
+    if n_blocks == 5 and n_models == 4:
+        return 7.800, 9.960
+
+
+    return None, None
+
+
+def collect_model_values_by_region(
+    results: list[dict[str, Any]],
+    region_name: str,
+    metric_key: str,
+) -> dict[str, dict[int, float]]:
+    """Collect regional metric values by model and fold.
+
+    Args:
+        results: The cross-validation results loaded from JSON files.
+        region_name: The BraTS region to analyze.
+        metric_key: The metric to collect.
+
+    Returns:
+        A dictionary mapping each model to its fold-level values.
+    """
+    values_by_model: dict[str, dict[int, float]] = {}
+
+    for result in results:
+        model_name = result["model"]
+        values_by_fold: dict[int, float] = {}
+
+        for fold in result.get("folds", []):
+            fold_id = fold.get("fold")
+            region_metrics = fold.get("test_lesionwise_by_label", {}).get(
+                region_name,
+                {},
+            )
+            value = region_metrics.get(metric_key)
+
+            if fold_id is not None and is_valid_number(value):
+                values_by_fold[int(fold_id)] = float(value)
+
+        values_by_model[model_name] = values_by_fold
+
+    return values_by_model
+
+
+def save_model_significance_tests_by_region(
+    output_path: Path,
+    results: list[dict[str, Any]],
+) -> None:
+    """Run Friedman and pairwise Wilcoxon tests between models by region.
+
+    Args:
+        output_path: The path where the CSV file is saved.
+        results: The cross-validation results loaded from JSON files.
+    """
+    metric_configs = [
+        ("lesionwise_dice", "Dice lesion-wise"),
+        ("lesionwise_hd95", "HD95 lesion-wise"),
+    ]
+
+    rows: list[dict[str, Any]] = []
+
+    for metric_key, metric_name in metric_configs:
+        for region_name in REGION_TEST_NAMES:
+            values_by_model = collect_model_values_by_region(
+                results=results,
+                region_name=region_name,
+                metric_key=metric_key,
+            )
+
+            valid_models = [
+                model
+                for model, fold_values in values_by_model.items()
+                if len(fold_values) > 0
+            ]
+
+            if len(valid_models) < 2:
+                continue
+
+            common_folds = sorted(
+                set.intersection(
+                    *[
+                        set(values_by_model[model].keys())
+                        for model in valid_models
+                    ]
+                )
+            )
+
+            if len(common_folds) < 3:
+                continue
+
+            aligned_values = [
+                [
+                    values_by_model[model][fold]
+                    for fold in common_folds
+                ]
+                for model in valid_models
+            ]
+
+            if len(valid_models) > 2:
+                statistic, p_value = friedmanchisquare(*aligned_values)
+
+                rows.append(
+                    {
+                        "metric": metric_name,
+                        "region": region_name,
+                        "test": "Friedman global",
+                        "comparison": "All models",
+                        "n_blocks": len(common_folds),
+                        "statistic": float(statistic),
+                        "p_value": float(p_value),
+                        "p_value_corrected": None,
+                    }
+                )
+
+            pairwise_rows: list[dict[str, Any]] = []
+            raw_p_values: list[float] = []
+
+            for model_a, model_b in combinations(valid_models, 2):
+                pair_folds = sorted(
+                    set(values_by_model[model_a].keys())
+                    & set(values_by_model[model_b].keys())
+                )
+
+                values_a = [
+                    values_by_model[model_a][fold]
+                    for fold in pair_folds
+                ]
+                values_b = [
+                    values_by_model[model_b][fold]
+                    for fold in pair_folds
+                ]
+
+                if len(values_a) < 2:
+                    continue
+
+                try:
+                    statistic, p_value = wilcoxon(values_a, values_b)
+                    statistic = float(statistic)
+                    p_value = float(p_value)
+                except ValueError:
+                    statistic = None
+                    p_value = None
+
+                pairwise_rows.append(
+                    {
+                        "metric": metric_name,
+                        "region": region_name,
+                        "test": "Paired Wilcoxon",
+                        "comparison": f"{model_a} vs {model_b}",
+                        "n_blocks": len(pair_folds),
+                        "statistic": statistic,
+                        "p_value": p_value,
+                        "p_value_corrected": None,
+                    }
+                )
+
+                raw_p_values.append(p_value if p_value is not None else 1.0)
+
+            corrected_p_values = apply_holm_correction(raw_p_values)
+
+            for row, corrected_p in zip(pairwise_rows, corrected_p_values):
+                row["p_value_corrected"] = corrected_p
+                rows.append(row)
 
     write_csv(output_path, rows)
 
@@ -982,7 +1235,7 @@ def main() -> None:
     save_et_vs_netc_plot(
         output_path=output_dir / "scatter_et_vs_netc_context.pdf",
         rows=et_netc_rows,
-        title="Dependencia contextual: Dice ET frente a Dice NETC",
+        title="Coeficiente Dice NETC frente a Coeficiente Dice ET",
         with_local_lines=False,
     )
 
@@ -998,6 +1251,12 @@ def main() -> None:
         results=results,
     )
 
+    save_model_significance_tests_by_region(
+        output_path=output_dir / "model_significance_tests_by_region.csv",
+        results=results,
+    )
+
+
     save_swin_segmamba_comparison(
         output_path=output_dir / "swin_unetr_vs_segmamba_comparison.csv",
         results=results,
@@ -1007,6 +1266,7 @@ def main() -> None:
     print(f"Correlation table: {output_dir / 'performance_cost_correlations.csv'}")
     print(f"Simpson's paradox check: {output_dir / 'simpson_check_et_vs_netc.csv'}")
     print(f"Tests by region: {output_dir / 'region_significance_tests.csv'}")
+    print(f"Tests by model and region: {output_dir / 'model_significance_tests_by_region.csv'}")
 
 
 if __name__ == "__main__":

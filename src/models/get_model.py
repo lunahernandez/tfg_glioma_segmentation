@@ -3,7 +3,6 @@ from torch.nn import Module
 from src.models.unet3d import build_unet3d
 from src.models.resunet3d import build_resunet3d
 from src.models.swin_unetr import build_swin_unetr
-from src.models.dense_unet_plus import DenseUNetPlus3D
 from src.models.segmamba import SegMamba
 
 
@@ -41,15 +40,6 @@ def get_model(
             in_channels=in_channels,
             out_channels=out_channels,
             use_checkpoint=use_checkpoint,
-        )
-
-    if model_name == "dense_unet_plus":
-        return DenseUNetPlus3D(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            init_features=32,
-            growth_rate=16,
-            block_layers=3,
         )
 
     if model_name == "segmamba":

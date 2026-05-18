@@ -648,7 +648,7 @@ def save_bubble_tradeoff_plot(
         )
 
     format_axes(
-        title="Compromiso global: precisión y coste en inferencia",
+        title="Relación entre precisión y coste en inferencia",
         xlabel="Tiempo de inferencia por caso (s)",
         ylabel="Dice lesion-wise medio",
         grid_axis="both",
@@ -743,6 +743,7 @@ def save_training_curve_plot(
         title=title,
         xlabel="Época",
         ylabel=ylabel,
+        grid_axis="both",
     )
 
     plt.legend(frameon=True)
@@ -769,7 +770,7 @@ def save_aggregated_region_boxplot(
     plot_regions: list[str] = []
 
     metric_key = "lesionwise_hd95" if metric_type == "hd95" else "lesionwise_dice"
-    ylabel = "HD95 lesion-wise" if metric_type == "hd95" else "Dice lesion-wise"
+    ylabel = "HD95 lesion-wise" if metric_type == "hd95" else "Coeficiente Dice lesion-wise"
 
     for region in REGION_NAMES:
         combined_values: list[float] = []
@@ -887,8 +888,8 @@ def main() -> None:
         labels=models,
         means=[r["dice_mean"] for r in results],
         stds=[r["dice_std"] for r in results],
-        ylabel="Dice lesion-wise medio",
-        title="Dice global por modelo",
+        ylabel="Coeficiente Dice lesion-wise medio",
+        title="Coeficiente Dice global por modelo",
     )
 
     save_bar_plot(
@@ -906,8 +907,8 @@ def main() -> None:
         results=results,
         metric_key="lesionwise_dice_mean",
         std_key="lesionwise_dice_std",
-        ylabel="Dice lesion-wise medio",
-        title="Dice por región BraTS",
+        ylabel="Coeficiente Dice lesion-wise medio",
+        title="Coeficiente Dice por región BraTS",
     )
 
     save_grouped_region_plot(
@@ -969,7 +970,7 @@ def main() -> None:
         output_path=output_dir / "train_loss_by_epoch.pdf",
         results=results,
         metric_key="train_loss",
-        ylabel="Pérdida de entrenamiento",
+        ylabel="Pérdida media de entrenamiento",
         title="Evolución de la pérdida de entrenamiento",
         show_markers=False,
     )
@@ -978,8 +979,8 @@ def main() -> None:
         output_path=output_dir / "val_dice_by_epoch.pdf",
         results=results,
         metric_key="val_mean_dice",
-        ylabel="Dice medio en validación",
-        title="Evolución del Dice en validación",
+        ylabel="Coeficiente Dice medio en validación",
+        title="Evolución del coeficiente Dice en validación",
         show_markers=True,
     )
 
@@ -995,7 +996,7 @@ def main() -> None:
     save_aggregated_region_boxplot(
         output_path=output_dir / "boxplot_dice_by_region_aggregated.pdf",
         results=results,
-        title="Distribución de Dice por región BraTS",
+        title="Distribución del coeficiente Dice por región BraTS",
         metric_type="dice",
     )
 
