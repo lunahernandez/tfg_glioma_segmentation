@@ -14,8 +14,23 @@ TRAIN_DIRS = [
 ]
 
 
+# Experiments
+# MODEL_NAME = "unet3d"
+# MODEL_NAME = "resunet3d"
+# MODEL_NAME = "swin_unetr"
+MODEL_NAME = "segmamba"
+
 # Hardware and reproducibility
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if MODEL_NAME.lower() == "segmamba":
+    if not torch.cuda.is_available():
+        raise RuntimeError(
+            "SegMamba requires CUDA, but torch.cuda.is_available() is False. "
+            "Check that PyTorch can see your GPU."
+        )
+    DEVICE = torch.device("cuda")
+else:
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 SEED = 42
 
 # Dataset configuration
@@ -28,17 +43,9 @@ SPACING = (1.0, 1.0, 1.0)
 IN_CHANNELS = 4
 OUT_CHANNELS = 5
 
-# Experiments
-MODEL_NAME = "unet3d"
-# MODEL_NAME = "resunet3d"
-# MODEL_NAME = "dense_unet_plus"
-# MODEL_NAME = "swin_unetr"
-# MODEL_NAME = "segmamba"
-
 # Training hyperparameters
 BATCH_SIZE = 1
 VAL_BATCH_SIZE = 1
-NUM_WORKERS = 4
 
 MAX_EPOCHS = 100
 VAL_EVERY = 5
@@ -49,10 +56,12 @@ if MODEL_NAME == "segmamba":
     LEARNING_RATE = 1e-5
     CLIP_GRAD = True
     GRAD_CLIP_MAX_NORM = 1.0
+    NUM_WORKERS = 2
 else:
     LEARNING_RATE = 1e-4
     CLIP_GRAD = False
     GRAD_CLIP_MAX_NORM = None
+    NUM_WORKERS = 4
 
 # Memory and performance
 SW_BATCH_SIZE = 2
@@ -73,5 +82,5 @@ PERSISTENT_CACHE_DIR = CACHE_ROOT / CACHE_NAME
 
 EXPERIMENT_NAME = (
     f"brats_{MODEL_NAME}_roi{ROI_SIZE[0]}_bs{BATCH_SIZE}"
-    f"_nworkers{NUM_WORKERS}_cv{N_FOLDS}_labelmapfix"
+    f"_nworkers{NUM_WORKERS}_cv{N_FOLDS}_without_background"
 )

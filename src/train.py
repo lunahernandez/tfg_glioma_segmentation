@@ -26,6 +26,7 @@ def train_model(
     sw_batch_size: int = 1,
     clip_grad: bool = False,
     grad_clip_max_norm: float = 1.0,
+    include_background: bool = True,
 ) -> dict[str, Any]:
     """Trains a segmentation model with mixed precision and periodic validation.
 
@@ -50,6 +51,7 @@ def train_model(
         clip_grad: Whether to apply gradient clipping to prevent exploding gradients.
         grad_clip_max_norm: Maximum allowed norm for the gradients if clipping 
             is enabled.
+        include_background: Whether the background class is included in the loss computation.
 
     Returns:
         A dictionary containing the overall training summary:
@@ -59,7 +61,7 @@ def train_model(
             - "history" (list[dict]): List of dictionaries containing the metric 
               history per epoch.
     """
-    loss_function = DiceCELoss(to_onehot_y=True, softmax=True)
+    loss_function = DiceCELoss(include_background=include_background, to_onehot_y=True, softmax=True)
     best_metric = -1.0
     best_metric_epoch = -1
     history = []
