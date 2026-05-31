@@ -1,3 +1,9 @@
+# Adapted from BraTS-2024-Metrics:
+# https://github.com/rachitsaluja/BraTS-2024-Metrics/blob/main/metrics_GLI.py
+# Licensed under the Apache License, Version 2.0:
+# https://github.com/rachitsaluja/BraTS-2024-Metrics/blob/main/LICENSE
+# Modified for this project by Luna Hernández, 2026.
+
 import numpy as np
 
 if not hasattr(np, "Inf"):
