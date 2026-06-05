@@ -102,82 +102,113 @@ def save_mri_sequences_plot(
     plt.close()
 
 
-def save_mri_segmentation_plot(
-        patient_id: str, 
-        patient_dir: str, 
-        output_dir: str, 
-        slice_idx: Optional[int] = None
+def save_mri_segmentation_views_plot(
+        patient_id: str,
+        patient_dir: str,
+        output_dir: str
 ) -> None:
     """
-    Generates and saves a figure showing an axial slice of the T2 FLAIR sequence
-    with the segmentation mask overlaid. The figure is exported as a PDF file to
-    the specified output directory.
+    Generates and saves a figure showing sagittal, coronal and axial views of
+    the T2 FLAIR sequence with the segmentation mask overlaid. The figure is
+    exported as a PDF file to the specified output directory.
 
     Args:
         patient_id: Unique patient identifier.
         patient_dir: Path to the directory containing the patient's NIfTI files.
         output_dir: Path to the directory where the PDF file will be exported.
-        slice_idx: Axial slice index to visualize. If None, the slice with the
-            largest number of tumor voxels is selected automatically.
     """
     color_map = {
-        1: '#FF5C5C', # NETC
-        2: '#66F466', # SNFH
-        3: '#7070DC', # ET
-        4: '#FFFF5C'  # RC
+        1: '#FF5C5C',  # NETC
+        2: '#66F466',  # SNFH
+        3: '#7070DC',  # ET
+        4: '#FFFF5C'   # RC
     }
-    
+
     custom_cmap = ListedColormap(list(color_map.values()))
 
     seg_path = os.path.join(patient_dir, f"{patient_id}-seg.nii.gz")
-    seg_data, _ = load_nifti(seg_path)
-    
-    if slice_idx is None:
-        tumor_pixels_per_slice = np.sum(seg_data > 0, axis=(0, 1))
-        slice_idx = int(np.argmax(tumor_pixels_per_slice))
-
     t2f_path = os.path.join(patient_dir, f"{patient_id}-t2f.nii.gz")
+
+    seg_data, _ = load_nifti(seg_path)
     t2f_data, _ = load_nifti(t2f_path)
-    
-    flair_slice = t2f_data[:, :, slice_idx].T
-    mask_slice = seg_data[:, :, slice_idx].T
-    
-    fig, ax = plt.subplots(figsize=(10, 8))
-    
+
+    sagittal_idx = int(np.argmax(np.sum(seg_data > 0, axis=(1, 2))))
+    coronal_idx = int(np.argmax(np.sum(seg_data > 0, axis=(0, 2))))
+    axial_idx = int(np.argmax(np.sum(seg_data > 0, axis=(0, 1))))
+
+    views = [
+        (
+            "Corte sagital",
+            sagittal_idx,
+            t2f_data[sagittal_idx, :, :].T,
+            seg_data[sagittal_idx, :, :].T
+        ),
+        (
+            "Corte coronal",
+            coronal_idx,
+            t2f_data[:, coronal_idx, :].T,
+            seg_data[:, coronal_idx, :].T
+        ),
+        (
+            "Corte axial",
+            axial_idx,
+            t2f_data[:, :, axial_idx].T,
+            seg_data[:, :, axial_idx].T
+        )
+    ]
+
+    fig, axes = plt.subplots(1, 3, figsize=(16, 6))
+
     fig.suptitle(
-        f"Paciente: {patient_id} (Corte Axial: {slice_idx})", 
-        fontsize=22, fontweight='bold', fontfamily='serif', y=0.98
+        f"Paciente: {patient_id} (FLAIR + Máscara)",
+        fontsize=22,
+        fontweight='bold',
+        fontfamily='serif',
+        y=0.98
     )
-    
-    ax.imshow(flair_slice, cmap='gray', origin='lower')
-    
-    masked_seg = np.ma.masked_where(mask_slice == 0, mask_slice)
-    ax.imshow(
-        masked_seg, cmap=custom_cmap, alpha=0.5, 
-        origin='lower', interpolation='none', vmin=1, vmax=4
-    )
-    
-    ax.set_title("(FLAIR + Máscara)", fontsize=18, fontweight='bold', fontfamily='serif')
-    ax.axis('off')
-    
+
+    for ax, (title, idx, flair_slice, mask_slice) in zip(axes, views):
+        ax.imshow(flair_slice, cmap='gray', origin='lower')
+
+        masked_seg = np.ma.masked_where(mask_slice == 0, mask_slice)
+        ax.imshow(
+            masked_seg,
+            cmap=custom_cmap,
+            alpha=0.5,
+            origin='lower',
+            interpolation='none',
+            vmin=1,
+            vmax=4
+        )
+
+        ax.set_title(
+            f"{title}: {idx}",
+            fontsize=18,
+            fontweight='bold',
+            fontfamily='serif'
+        )
+        ax.axis('off')
+
     legend_patches = []
     for i, color in color_map.items():
         name = LABEL_NAMES_ES.get(i, f"Etiqueta {i}")
         patch = mpatches.Patch(color=color, label=name, alpha=0.7)
         legend_patches.append(patch)
-        
-    leg = ax.legend(
-        handles=legend_patches, title="Leyenda de Segmentación", 
-        loc='upper center', bbox_to_anchor=(0.5, -0.05), ncol=2,
-        prop={'family': 'serif', 'size': 15}
+
+    leg = fig.legend(
+        handles=legend_patches,
+        title="Leyenda de segmentación",
+        loc='lower center',
+        ncol=4,
+        prop={'family': 'serif', 'size': 14}
     )
-    
+
     plt.setp(leg.get_title(), family='serif', fontsize=16, fontweight='bold')
-    
+
     plt.tight_layout()
-    fig.subplots_adjust(top=0.88, bottom=0.2)
-    
-    file_name = f"{patient_id}_mri_segmentation.pdf"
+    fig.subplots_adjust(top=0.85, bottom=0.20)
+
+    file_name = f"{patient_id}_mri_segmentation_views.pdf"
     plt.savefig(os.path.join(output_dir, file_name), bbox_inches='tight')
     plt.close()
 

@@ -2,7 +2,7 @@ import os
 import argparse
 from utils import (
     save_mri_sequences_plot,
-    save_mri_segmentation_plot,
+    save_mri_segmentation_views_plot,
     check_image_dimensions,
     verify_dataset_dimensions,
     extract_voxel_statistics,
@@ -66,7 +66,7 @@ def main():
     save_mri_sequences_plot(PATIENT_ID, PATIENT_PATH, PATIENT_FIGURES_DIR)
     
     print("\nGenerating segmented visualization...")
-    save_mri_segmentation_plot(PATIENT_ID, PATIENT_PATH, PATIENT_FIGURES_DIR)
+    save_mri_segmentation_views_plot(PATIENT_ID, PATIENT_PATH, PATIENT_FIGURES_DIR)
 
     print(f"\nIndividual results saved in: {PATIENT_FIGURES_DIR}")
 
