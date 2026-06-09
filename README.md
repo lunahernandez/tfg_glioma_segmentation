@@ -66,11 +66,7 @@ tfg_glioma_segmentation/
 
 El conjunto de datos no se incluye en este repositorio debido a restricciones de tamaño y licencia.
 
-Los datos utilizados corresponden al reto **BraTS 2024 Challenge - BraTS-GLI** y pueden obtenerse desde la página oficial de Synapse:
-
-```text
-https://www.synapse.org/Synapse:syn53708249/wiki/627759
-```
+Los datos utilizados corresponden al reto **BraTS 2024 Challenge - BraTS-GLI** y pueden obtenerse desde la [página oficial de Synapse](https://www.synapse.org/Synapse:syn53708249/wiki/627759).
 
 Una vez descargados, se deben ubicar en el directorio `data/` con una estructura similar a la siguiente:
 
@@ -83,7 +79,6 @@ data/
 ├── CITATIONS.bib
 └── manifest.csv
 ```
-
 
 Las rutas exactas del dataset y la configuración de los experimentos se definen en:
 
@@ -107,7 +102,7 @@ CUDA Toolkit: 12.8
 PyTorch: 2.11.0+cu128
 ```
 
-La instalación general del proyecto se describe en la siguiente sección. Sin embargo, los experimentos basados en SegMamba requieren pasos adicionales de configuración y compilación local, descritos en:
+La instalación general del proyecto se describe en la siguiente sección. Para reproducir todos los experimentos, incluyendo los basados en SegMamba, se deben seguir además las instrucciones específicas de configuración y compilación local descritas en:
 
 ```text
 docs/segmamba_notes.md
@@ -125,7 +120,8 @@ source venv/bin/activate
 Actualizar las herramientas básicas de empaquetado:
 
 ```bash
-python -m pip install --upgrade pip setuptools wheel
+python -m pip install --upgrade pip wheel ninja
+python -m pip install "setuptools==70.2.0"
 ```
 
 Instalar las dependencias generales del proyecto:
@@ -136,13 +132,7 @@ pip install -r requirements.txt
 
 El archivo `requirements.txt` utiliza las ruedas de PyTorch con soporte para CUDA 12.8.
 
-> **Nota:** la instalación anterior cubre las dependencias generales del proyecto. Los experimentos basados en SegMamba requieren pasos adicionales, ya que `causal-conv1d` y `mamba-ssm` tuvieron que compilarse localmente para ser compatibles con la NVIDIA RTX 5090.
-
-Las instrucciones específicas para SegMamba están disponibles en:
-
-```text
-docs/segmamba_notes.md
-```
+> **Nota:** la instalación anterior cubre las dependencias generales del proyecto. Para ejecutar los experimentos basados en SegMamba, es necesario seguir los pasos adicionales descritos en `docs/segmamba_notes.md`, ya que `causal-conv1d` y `mamba-ssm` tuvieron que compilarse localmente para ser compatibles con la NVIDIA RTX 5090.
 
 ## Configuración
 
@@ -191,13 +181,13 @@ Ejecutar solo el entrenamiento de un fold concreto:
 python -m src.main --mode train --fold 1
 ```
 
-Ejecutar solo la evaluación/test:
+Ejecutar solo la evaluación:
 
 ```bash
 python -m src.main --mode test
 ```
 
-Ejecutar solo la evaluación/test de un fold concreto:
+Ejecutar solo la evaluación de un fold concreto:
 
 ```bash
 python -m src.main --mode test --fold 1

@@ -1,31 +1,31 @@
-# SegMamba setup notes
+# Notas de instalación de SegMamba
 
-This document describes the additional setup required to run the SegMamba-based experiments in this project.
+Este documento describe la configuración adicional necesaria para ejecutar los experimentos basados en SegMamba dentro de este proyecto.
 
-SegMamba was installed locally from the original repository. Due to compatibility issues with the NVIDIA RTX 5090, `causal-conv1d` and `mamba-ssm` had to be compiled manually with support for compute capability `sm_120`.
+SegMamba se instaló localmente a partir del repositorio original. Debido a problemas de compatibilidad con la NVIDIA RTX 5090, las dependencias `causal-conv1d` y `mamba-ssm` tuvieron que compilarse manualmente con soporte para la capacidad de cómputo `sm_120`.
 
-## Environment used
+## Entorno utilizado
 
-* OS: WSL Ubuntu
+* Sistema operativo: WSL Ubuntu
 * GPU: NVIDIA RTX 5090
 * CUDA Toolkit: 12.8
 * PyTorch: 2.11.0+cu128
 * MONAI: 1.5.2
 * transformers: 4.36.2
 
-## Important note
+## Nota importante
 
-`causal-conv1d` and `mamba-ssm` are not included in `requirements.txt` because they must be installed locally from the SegMamba repository after applying the compatibility changes described below.
+`causal-conv1d` y `mamba-ssm` no se incluyen en `requirements.txt`, ya que deben instalarse localmente desde el repositorio de SegMamba después de aplicar los cambios de compatibilidad descritos en este documento.
 
-In the commands below, replace `/path/to/tfg_glioma_segmentation` with the local path where this repository was cloned.
+En los comandos siguientes, sustituir `/path/to/tfg_glioma_segmentation` por la ruta local en la que se haya clonado este repositorio.
 
 ```bash
 export PROJECT_ROOT=/path/to/tfg_glioma_segmentation
 ```
 
-## 1. Install CUDA Toolkit 12.8 under WSL
+## 1. Instalar CUDA Toolkit 12.8 en WSL
 
-SegMamba requires local compilation of CUDA-dependent packages. For this reason, CUDA Toolkit 12.8 was installed under WSL.
+SegMamba requiere la compilación local de paquetes dependientes de CUDA. Por este motivo, se utilizó CUDA Toolkit 12.8 bajo WSL.
 
 ```bash
 wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
@@ -41,14 +41,14 @@ sudo apt-get update
 sudo apt-get install -y cuda-toolkit-12-8
 ```
 
-These commands:
+Estos comandos:
 
-* add the NVIDIA CUDA package repository for WSL;
-* register the repository signing key;
-* update the local package index;
-* install CUDA Toolkit 12.8, including `nvcc`, CUDA libraries and header files.
+* añaden el repositorio de paquetes de NVIDIA CUDA para WSL;
+* registran la clave de firma del repositorio;
+* actualizan el índice local de paquetes;
+* instalan CUDA Toolkit 12.8, incluyendo `nvcc`, bibliotecas CUDA y archivos de cabecera.
 
-## 2. Configure CUDA 12.8 as the active CUDA version
+## 2. Configurar CUDA 12.8 como versión activa
 
 ```bash
 sudo ln -sfn /usr/local/cuda-12.8 /usr/local/cuda
@@ -62,18 +62,18 @@ hash -r
 nvcc -V
 ```
 
-These commands:
+Estos comandos:
 
-* create `/usr/local/cuda` as a symbolic link to CUDA 12.8;
-* define `CUDA_HOME`, which is used by build tools to locate CUDA;
-* add CUDA binaries such as `nvcc` to the system `PATH`;
-* add CUDA libraries to `LD_LIBRARY_PATH`;
-* reload the shell configuration;
-* check that `nvcc` is available and points to the expected CUDA version.
+* crean `/usr/local/cuda` como enlace simbólico a CUDA 12.8;
+* definen `CUDA_HOME`, utilizado por las herramientas de compilación para localizar CUDA;
+* añaden binarios de CUDA, como `nvcc`, al `PATH` del sistema;
+* añaden las bibliotecas de CUDA a `LD_LIBRARY_PATH`;
+* recargan la configuración de la terminal;
+* comprueban que `nvcc` está disponible y apunta a la versión esperada de CUDA.
 
-## 3. Create the Python virtual environment
+## 3. Crear el entorno virtual de Python
 
-From the project root:
+Desde la raíz del proyecto:
 
 ```bash
 cd "$PROJECT_ROOT"
@@ -81,25 +81,27 @@ cd "$PROJECT_ROOT"
 python3 -m venv venv
 source venv/bin/activate
 
-python -m pip install --upgrade pip setuptools wheel ninja
+python -m pip install --upgrade pip wheel ninja
+python -m pip install "setuptools==70.2.0"
 ```
 
-These commands:
+Estos comandos:
 
-* create a clean Python virtual environment;
-* activate it;
-* upgrade the basic Python packaging tools;
-* install `ninja`, which is used during local compilation.
+* crean un entorno virtual limpio;
+* activan el entorno virtual;
+* actualizan las herramientas básicas de empaquetado;
+* instalan `ninja`, utilizado durante la compilación local;
+* instalan la versión de `setuptools` utilizada en el entorno que funcionó correctamente.
 
-## 4. Install the project dependencies
+## 4. Instalar las dependencias del proyecto
 
-The project dependencies are installed from the main requirements file:
+Las dependencias generales del proyecto se instalan desde el archivo principal de requisitos:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-The `requirements.txt` file includes PyTorch with CUDA 12.8 wheels:
+El archivo `requirements.txt` incluye las ruedas de PyTorch con soporte para CUDA 12.8:
 
 ```text
 torch==2.11.0+cu128
@@ -107,61 +109,73 @@ torchvision==0.26.0+cu128
 torchaudio==2.11.0+cu128
 ```
 
-After installation, PyTorch can be checked with:
+Después de la instalación, PyTorch puede comprobarse con:
 
 ```bash
 python -c "import torch; print(torch.__version__); print(torch.version.cuda); print(torch.cuda.get_arch_list())"
 nvcc -V
 ```
 
-These commands check:
+Estos comandos comprueban:
 
-* the installed PyTorch version;
-* the CUDA version used by PyTorch;
-* the GPU architectures supported by the installed PyTorch build;
-* the CUDA Toolkit version available through `nvcc`.
+* la versión instalada de PyTorch;
+* la versión de CUDA utilizada por PyTorch;
+* las arquitecturas de GPU soportadas por la instalación de PyTorch;
+* la versión de CUDA Toolkit disponible mediante `nvcc`.
 
-## 5. Clone SegMamba locally
+## 5. Clonar SegMamba localmente
 
-From the project root:
+Desde la raíz del proyecto:
 
 ```bash
 cd "$PROJECT_ROOT"
 git clone https://github.com/ge-xing/SegMamba.git
 ```
 
-The external SegMamba repository is cloned locally but is not included in this repository.
+El repositorio externo de SegMamba se clona localmente, pero no se incluye dentro de este repositorio.
 
-## 6. Apply the required manual changes
+## 6. Adaptar la implementación de SegMamba
 
-### Import in `src/models/segmamba.py`
+La implementación del modelo SegMamba utilizada en este proyecto se adaptó a partir del archivo del repositorio público:
 
-In this project, the SegMamba import was adapted.
+```text
+SegMamba/model_segmamba/segmamba.py
+```
 
-The original import:
+Ese archivo se copió y adaptó en el proyecto como:
+
+```text
+src/models/segmamba.py
+```
+
+Esta adaptación permite integrar SegMamba en el mismo flujo experimental que el resto de modelos evaluados.
+
+### Cambio del import de Mamba
+
+En `src/models/segmamba.py`, el import original:
 
 ```python
 from mamba_ssm import Mamba
 ```
 
-was replaced by:
+se sustituyó por:
 
 ```python
 from mamba_ssm.modules.mamba_simple import Mamba
 ```
 
-This change was required because the local `mamba-ssm` installation exposes the `Mamba` module from `mamba_ssm.modules.mamba_simple`.
+Este cambio fue necesario porque la instalación local de `mamba-ssm` expone el módulo `Mamba` desde `mamba_ssm.modules.mamba_simple`.
 
-### Support for `sm_120`
+### Soporte para `sm_120`
 
-The following files from the local SegMamba repository were modified:
+También fue necesario modificar los siguientes archivos del repositorio local de SegMamba:
 
 ```text
 SegMamba/causal-conv1d/setup.py
 SegMamba/mamba/setup.py
 ```
 
-The following block was added to include support for compute capability `sm_120`:
+En ambos archivos se añadió el siguiente bloque para incluir soporte para la capacidad de cómputo `sm_120`:
 
 ```python
 if bare_metal_version >= Version("12.8"):
@@ -169,11 +183,11 @@ if bare_metal_version >= Version("12.8"):
     cc_flag.append("arch=compute_120,code=sm_120")
 ```
 
-This change allows the CUDA extensions to be compiled for the NVIDIA RTX 5090.
+Este cambio permite compilar las extensiones CUDA para la NVIDIA RTX 5090.
 
-## 7. Compile `causal-conv1d` locally
+## 7. Compilar `causal-conv1d` localmente
 
-Before compiling, make sure CUDA 12.8 is available in the current shell:
+Antes de compilar, comprobar que CUDA 12.8 está disponible en la terminal actual:
 
 ```bash
 export CUDA_HOME=/usr/local/cuda-12.8
@@ -181,7 +195,7 @@ export PATH=$CUDA_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 ```
 
-Then compile and install `causal-conv1d` from the local SegMamba repository:
+Después, compilar e instalar `causal-conv1d` desde el repositorio local de SegMamba:
 
 ```bash
 export CAUSAL_CONV1D_FORCE_BUILD=TRUE
@@ -190,13 +204,13 @@ cd "$PROJECT_ROOT/SegMamba/causal-conv1d"
 pip install --no-build-isolation --no-cache-dir --no-deps --force-reinstall .
 ```
 
-These commands:
+Estos comandos:
 
-* force local compilation instead of using a prebuilt wheel;
-* compile the CUDA extension using the local CUDA Toolkit;
-* install the package into the active virtual environment.
+* fuerzan la compilación local en lugar de utilizar una rueda precompilada;
+* compilan la extensión CUDA utilizando el CUDA Toolkit local;
+* instalan el paquete en el entorno virtual activo.
 
-## 8. Compile `mamba-ssm` locally
+## 8. Compilar `mamba-ssm` localmente
 
 ```bash
 export MAMBA_FORCE_BUILD=TRUE
@@ -205,15 +219,15 @@ cd "$PROJECT_ROOT/SegMamba/mamba"
 pip install --no-build-isolation --no-cache-dir --no-deps --force-reinstall .
 ```
 
-These commands:
+Estos comandos:
 
-* force local compilation of `mamba-ssm`;
-* build it using the modified setup file with `sm_120` support;
-* install it into the active virtual environment.
+* fuerzan la compilación local de `mamba-ssm`;
+* compilan el paquete utilizando el archivo `setup.py` modificado con soporte para `sm_120`;
+* instalan el paquete en el entorno virtual activo.
 
-## 9. Final checks
+## 9. Comprobaciones finales
 
-From the project root:
+Desde la raíz del proyecto:
 
 ```bash
 cd "$PROJECT_ROOT"
@@ -224,12 +238,15 @@ python -c "from mamba_ssm.modules.mamba_simple import Mamba; print('mamba-ssm OK
 nvcc -V
 ```
 
-These commands verify that:
+Estos comandos verifican que:
 
-* PyTorch is correctly installed;
-* CUDA is available;
-* the expected CUDA Toolkit is active;
-* core medical imaging dependencies such as `nibabel` are installed;
-* the local `mamba-ssm` installation can be imported.
+* PyTorch está correctamente instalado;
+* CUDA está disponible;
+* CUDA Toolkit apunta a la versión esperada;
+* dependencias de imagen médica como `nibabel` están instaladas;
+* la instalación local de `mamba-ssm` puede importarse correctamente.
 
-After completing this setup, training and evaluation commands are described in the main `README.md`.
+Una vez completada esta configuración, los comandos de entrenamiento y evaluación se describen en el `README.md` principal.
+
+
+
