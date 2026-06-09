@@ -282,7 +282,8 @@ def save_fold_scatter_plot(
 
     if r_value is not None:
         stars = get_significance_stars(p_value)
-        title = f"{title} (r={r_value:.3f}{stars})"
+        r_text = f"{r_value:.3f}".replace(".", ",")
+        title = f"{title} (r = {r_text}{stars})"
 
     format_axes(
         title=title,
@@ -529,7 +530,8 @@ def save_et_vs_netc_plot(
 
     if r_value is not None and p_value is not None:
         stars = get_significance_stars(p_value)
-        title = f"{title} (r={r_value:.3f}{stars})"
+        r_text = f"{r_value:.3f}".replace(".", ",")
+        title = f"{title} (r = {r_text}{stars})"
 
     format_axes(
         title=title,
