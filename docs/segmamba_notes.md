@@ -101,7 +101,7 @@ Las dependencias generales del proyecto se instalan desde el archivo principal d
 pip install -r requirements.txt
 ```
 
-El archivo `requirements.txt` incluye las ruedas de PyTorch con soporte para CUDA 12.8:
+El archivo `requirements.txt` incluye la versión de PyTorch con soporte para CUDA 12.8:
 
 ```text
 torch==2.11.0+cu128

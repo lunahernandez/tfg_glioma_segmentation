@@ -130,7 +130,7 @@ Instalar las dependencias generales del proyecto:
 pip install -r requirements.txt
 ```
 
-El archivo `requirements.txt` utiliza las ruedas de PyTorch con soporte para CUDA 12.8.
+El archivo `requirements.txt` utiliza la versión de PyTorch con soporte para CUDA 12.8.
 
 > **Nota:** la instalación anterior cubre las dependencias generales del proyecto. Para ejecutar los experimentos basados en SegMamba, es necesario seguir los pasos adicionales descritos en `docs/segmamba_notes.md`, ya que `causal-conv1d` y `mamba-ssm` tuvieron que compilarse localmente para ser compatibles con la NVIDIA RTX 5090.
 
