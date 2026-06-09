@@ -78,8 +78,12 @@ Una vez descargados, se deben ubicar en el directorio `data/` con una estructura
 data/
 ├── training_data1_v2/
 ├── training_data_additional/
-└── validation_data/
+├── validation_data/
+├── BraTS-PTG supplementary demographic information and metadata.xlsx
+├── CITATIONS.bib
+└── manifest.csv
 ```
+
 
 Las rutas exactas del dataset y la configuración de los experimentos se definen en:
 
